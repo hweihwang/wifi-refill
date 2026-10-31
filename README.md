@@ -12,7 +12,7 @@ A small Mac menu bar app that logs you back in when the cafe's Wi-Fi logs you ou
   <a href="LICENSE">MIT</a>
 </p>
 
-<p align="center"><img src="docs/welcome.png" width="460" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, and works with Ruijie Cloud One-click Login pages."></p>
+<p align="center"><img src="docs/menu.png" width="720" alt="A Mac at a cafe with a document open. The Wi-Fi Refill menu hangs below the cup in the menu bar and says VLAN233: logged in."></p>
 
 Many cafes put their Wi-Fi behind a login page with a single "connect" button, and end the session after an hour.
 Your Mac stays on the Wi-Fi, but nothing loads until you open a page like neverssl.com and press the button again.
@@ -46,6 +46,8 @@ Login pages that ask for a voucher, a room number, a phone number or a password 
 Download [Wi-Fi-Refill.dmg](https://github.com/hweihwang/wifi-refill/releases/latest/download/Wi-Fi-Refill.dmg), open
 it and drag Wi-Fi Refill to Applications. It is signed and notarized by Apple. It needs macOS 14 Sonoma or later and
 runs on Apple silicon and Intel Macs.
+
+<img src="docs/welcome.png" width="460" align="right" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, and works with Ruijie Cloud One-click Login pages.">
 
 Look for the cup in your menu bar. The first time a supported login page appears, Wi-Fi Refill asks whether it may log
 in on that network, and macOS asks whether it may reach devices on your local network. Allow both: the last step of
