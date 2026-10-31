@@ -42,7 +42,8 @@ fi
 swift test
 
 app=$(scripts/build-app.sh "$version" --release | tail -1)
-lipo "$app/Contents/MacOS/WiFiRefill" -verify_arch arm64 x86_64
+archs=$(lipo -archs "$app/Contents/MacOS/WiFiRefill")
+[[ $archs == *arm64* && $archs == *x86_64* ]] || fail "Not a universal build: $archs"
 
 echo "Notarizing the app…"
 mkdir -p "dist/$version"
