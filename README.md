@@ -54,8 +54,12 @@ the login is a request to the cafe's router.
 ### Install with Homebrew
 
 ```sh
-brew install --cask hweihwang/wifi-refill/wifi-refill
+brew tap hweihwang/wifi-refill
+brew trust --tap hweihwang/wifi-refill
+brew install --cask wifi-refill
 ```
+
+Homebrew asks you to trust taps outside its own repositories; the second line does that for this one.
 
 Wi-Fi Refill updates itself, so you never need to download it again.
 
