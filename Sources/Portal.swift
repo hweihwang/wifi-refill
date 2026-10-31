@@ -31,14 +31,7 @@ struct Portal {
     }
 
     /// Does what the "One-click Login" button does, then reads the session length from the portal's config.
-    func login(_ probePage: String) async throws -> Login {
-        var page = probePage
-        // A router can answer with a page that redirects by script; follow the portal link in it.
-        if page.firstMatch(of: /sessionId=/) == nil,
-           let link = page.firstMatch(of: /https:\/\/portal-[a-z0-9-]+\.ruijienetworks\.com\/[^"'<>\s]+/),
-           let url = URL(string: String(link.0).replacingOccurrences(of: "&amp;", with: "&")) {
-            page += "\n" + (try await fetch(url))
-        }
+    func login(_ page: String) async throws -> Login {
         guard let portal = page.firstMatch(of: /https:\/\/portal-[a-z0-9-]+\.ruijienetworks\.com/)?.0,
               let sessionId = page.firstMatch(of: /sessionId=([0-9A-Za-z]+)/)?.1
         else { throw Failure(description: "the login page has no session") }
@@ -79,11 +72,23 @@ struct Portal {
         return Int("\(validity)")
     }
 
-    /// Returns the body followed by every URL the request went through, so callers can search one text.
+    /// Returns every body and URL the request went through, so callers can search one text.
+    /// Follows script redirects too: the Ruijie login page answers with <script>self.location.href='/api/auth/wifidog?...'</script>.
     private func fetch(_ url: URL) async throws -> String {
-        let recorder = RedirectRecorder()
-        let (data, response) = try await session.data(for: URLRequest(url: url), delegate: recorder)
-        return ([String(decoding: data, as: UTF8.self)] + recorder.urls + [response.url?.absoluteString ?? ""]).joined(separator: "\n")
+        var url = url
+        var text: [String] = []
+        for _ in 0..<5 {
+            let recorder = RedirectRecorder()
+            let (data, response) = try await session.data(for: URLRequest(url: url), delegate: recorder)
+            let body = String(decoding: data, as: UTF8.self)
+            text += [body] + recorder.urls + [response.url?.absoluteString ?? ""]
+            guard !text.joined().contains("sessionId="),
+                  let link = body.firstMatch(of: /location\.href\s*=\s*['"]([^'"]+)['"]/)?.1,
+                  let next = URL(string: String(link), relativeTo: response.url)
+            else { break }
+            url = next.absoluteURL
+        }
+        return text.joined(separator: "\n")
     }
 }
 

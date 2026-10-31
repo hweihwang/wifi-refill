@@ -7,9 +7,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let watcher = Watcher()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if !UserDefaults.standard.bool(forKey: "openAtLoginSet") {
+        // Replacing the app bundle drops the login item, so register again unless the user turned it off.
+        if UserDefaults.standard.object(forKey: "openAtLogin") as? Bool ?? true, SMAppService.mainApp.status != .enabled {
             setOpenAtLogin(true)
-            UserDefaults.standard.set(true, forKey: "openAtLoginSet")
         }
         let menu = NSMenu()
         menu.delegate = self
@@ -62,7 +62,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func togglePause() { watcher.paused.toggle() }
 
-    @objc private func toggleOpenAtLogin() { setOpenAtLogin(SMAppService.mainApp.status != .enabled) }
+    @objc private func toggleOpenAtLogin() {
+        let on = SMAppService.mainApp.status != .enabled
+        UserDefaults.standard.set(on, forKey: "openAtLogin")
+        setOpenAtLogin(on)
+    }
 
     @objc private func showLog() {
         if !FileManager.default.fileExists(atPath: Log.url.path) { Log.write("Log started.") }
