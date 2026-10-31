@@ -18,7 +18,7 @@ final class Watcher {
 
     var paused: Bool {
         get { defaults.bool(forKey: "paused") }
-        set { defaults.set(newValue, forKey: "paused"); check() }
+        set { defaults.set(newValue, forKey: "paused"); check(reason: "pause toggled") }
     }
 
     private let defaults = UserDefaults.standard
@@ -40,27 +40,27 @@ final class Watcher {
 
     func start() {
         // A new path may be another network behind the same gateway address, so confirm the cafe router again.
-        monitor.pathUpdateHandler = { [weak self] _ in Task { @MainActor in self?.cafe = nil; self?.check() } }
+        monitor.pathUpdateHandler = { [weak self] _ in Task { @MainActor in self?.cafe = nil; self?.check(reason: "network change") } }
         monitor.start(queue: .main)
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.check() }
+            Task { @MainActor in self?.check(reason: "wake") }
         }
     }
 
     /// Looks again now. With `force` it probes even when the session is not due to end yet.
-    func check(force: Bool = false) {
+    func check(force: Bool = false, reason: String) {
         timer?.invalidate()
         guard !paused else { status = .paused; return }
         guard !running else { again = true; return }
         running = true
         Task {
-            await evaluate(force: force)
+            await evaluate(force: force, reason: reason)
             running = false
-            if again { again = false; check() }
+            if again { again = false; check(reason: "change during a check") }
         }
     }
 
-    private func evaluate(force: Bool) async {
+    private func evaluate(force: Bool, reason: String) async {
         let now = Date()
         let current = Self.currentGateway()
         // No gateway means a Wi-Fi blip or wake from sleep; keep the session end so the timer survives it.
@@ -74,7 +74,7 @@ final class Watcher {
         }
 
         let probe = await portal.probe()
-        logger.notice("probe on gateway \(current ?? "none", privacy: .public): \(String(describing: probe).prefix(40), privacy: .public)")
+        logger.notice("probe (\(reason, privacy: .public)) on gateway \(current ?? "none", privacy: .public): \(String(describing: probe).prefix(40), privacy: .public)")
         switch probe {
         case .ruijie(let page):
             status = .loggingIn
@@ -119,7 +119,7 @@ final class Watcher {
         timer?.invalidate()
         // Timers stop counting while the Mac sleeps; the wake notification covers that.
         let timer = Timer(timeInterval: max(1, date.timeIntervalSinceNow), repeats: false) { [weak self] _ in
-            Task { @MainActor in self?.check() }
+            Task { @MainActor in self?.check(reason: "timer") }
         }
         RunLoop.main.add(timer, forMode: .common) // .common keeps it firing while the menu is open
         self.timer = timer

@@ -58,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.button?.toolTip = statusText
     }
 
-    @objc private func checkNow() { watcher.check(force: true) }
+    @objc private func checkNow() { watcher.check(force: true, reason: "Check Now") }
 
     @objc private func togglePause() { watcher.paused.toggle() }
 
