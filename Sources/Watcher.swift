@@ -39,7 +39,8 @@ final class Watcher {
     }
 
     func start() {
-        monitor.pathUpdateHandler = { [weak self] _ in Task { @MainActor in self?.check() } }
+        // A new path may be another network behind the same gateway address, so confirm the cafe router again.
+        monitor.pathUpdateHandler = { [weak self] _ in Task { @MainActor in self?.cafe = nil; self?.check() } }
         monitor.start(queue: .main)
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.check() }
@@ -62,7 +63,8 @@ final class Watcher {
     private func evaluate(force: Bool) async {
         let now = Date()
         let current = Self.currentGateway()
-        if current != gateway { gateway = current; cafe = nil; due = nil }
+        // No gateway means a Wi-Fi blip or wake from sleep; keep the session end so the timer survives it.
+        if let current, current != gateway { gateway = current; cafe = nil; due = nil }
         if cafe == nil, let current, let match = cafes.first(where: { $0.key.hasPrefix(current + ":") }), await portal.routerAnswers(match.key) {
             cafe = (match.key, match.value)
         }
@@ -116,9 +118,11 @@ final class Watcher {
     private func schedule(_ date: Date) {
         timer?.invalidate()
         // Timers stop counting while the Mac sleeps; the wake notification covers that.
-        timer = Timer.scheduledTimer(withTimeInterval: max(1, date.timeIntervalSinceNow), repeats: false) { [weak self] _ in
+        let timer = Timer(timeInterval: max(1, date.timeIntervalSinceNow), repeats: false) { [weak self] _ in
             Task { @MainActor in self?.check() }
         }
+        RunLoop.main.add(timer, forMode: .common) // .common keeps it firing while the menu is open
+        self.timer = timer
     }
 
     private static func currentGateway() -> String? {
