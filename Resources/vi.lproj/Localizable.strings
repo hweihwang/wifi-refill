@@ -18,7 +18,7 @@
 /* Status */
 "Paused" = "Đang tạm dừng";
 "Offline" = "Không có mạng";
-"This network has no login page" = "Mạng này không có trang đăng nhập";
+"No login page right now" = "Hiện không có trang đăng nhập";
 "This login page isn't supported yet." = "Chưa hỗ trợ trang đăng nhập này.";
 "Waiting for your answer about %@" = "Đang chờ bạn trả lời về %@";
 "Not logged in to %@" = "Chưa đăng nhập vào %@";

@@ -12,7 +12,7 @@ A small Mac menu bar app that logs you back in when the cafe's Wi-Fi logs you ou
   <a href="LICENSE">MIT</a>
 </p>
 
-<p align="center"><img src="docs/menu.png" width="720" alt="The Wi-Fi Refill menu: Cafe Guest, logged in until 4:58 PM. Logged you back in 3 times today."></p>
+<p align="center"><img src="docs/welcome.png" width="460" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, and works with Ruijie Cloud One-click Login pages."></p>
 
 Many cafes put their Wi-Fi behind a login page with a single "connect" button, and end the session after an hour.
 Your Mac stays on the Wi-Fi, but nothing loads until you open a page like neverssl.com and press the button again.

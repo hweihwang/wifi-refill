@@ -91,7 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         switch watcher.status {
         case .paused: L("Paused")
         case .offline: L("Offline")
-        case .noLoginPage: L("This network has no login page")
+        case .noLoginPage: L("No login page right now")
         case .unsupported(let reason): L(reason)
         case .asking(let network): String(format: L("Waiting for your answer about %@"), network)
         case .notNow(let network): String(format: L("Not logged in to %@"), network)
