@@ -19,8 +19,21 @@ site=${SITE_DIR:-../hweihwang.com}
 dmg="dist/$version/Wi-Fi-Refill.dmg"
 notary=(--key "$APPLE_API_KEY" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER" --wait)
 
-grep -q "^## $version" CHANGELOG.md || { echo "CHANGELOG.md has no section for $version" >&2; exit 1; }
-[[ -z $(git status --porcelain) ]] || { echo "Commit or stash your changes first." >&2; exit 1; }
+fail() { echo "$1" >&2; exit 1; }
+grep -q "^## $version" CHANGELOG.md || fail "CHANGELOG.md has no section for $version"
+[[ -z $(git status --porcelain) ]] || fail "Commit or stash your changes first."
+if $publish; then
+    # Check everything publishing needs before anything is built or pushed, so a release never goes out halfway.
+    for repo in "$site" "$tap"; do
+        [[ -d $repo/.git ]] || fail "Missing clone: $repo"
+        [[ $(git -C "$repo" rev-parse --abbrev-ref HEAD) == main ]] || fail "$repo is not on main"
+        git -C "$repo" diff --cached --quiet || fail "$repo has staged changes"
+    done
+    grep -q '<language>en</language>' "$site/wifi-refill/appcast.xml" || fail "The appcast has no channel header"
+    git -C "$site" diff --quiet -- wifi-refill/appcast.xml || fail "The appcast has uncommitted changes"
+    git -C "$tap" diff --quiet -- Casks/wifi-refill.rb || fail "The cask has uncommitted changes"
+    ! gh release view "v$version" --repo hweihwang/wifi-refill > /dev/null 2>&1 || fail "v$version is already released"
+fi
 swift test
 
 app=$(scripts/build-app.sh "$version" --release | tail -1)
@@ -59,11 +72,8 @@ echo "sha256 $sha"
 echo "sparkle $signature"
 $publish || exit 0
 
-echo "Publishing…"
+echo "Preparing the appcast and the cask…"
 notes=$(awk -v v="## $version" '$0 ~ "^## " { on = index($0, v) == 1; next } on' CHANGELOG.md)
-git tag -a "v$version" -m "Wi-Fi Refill $version"
-git push origin main "v$version"
-gh release create "v$version" "$dmg" --title "Wi-Fi Refill $version" --notes "$notes"
 url="https://github.com/hweihwang/wifi-refill/releases/download/v$version/$(basename "$dmg")"
 
 # Appcast: newest item first, kept on hweihwang.com so the feed address never changes.
@@ -87,11 +97,17 @@ marker = "<language>en</language>\n"
 assert marker in text, "appcast has no channel header"
 open(path, "w").write(text.replace(marker, marker + item + "\n", 1))
 EOF
-git -C "$site" add wifi-refill/appcast.xml
-git -C "$site" commit -m "fix(site): Wi-Fi Refill $version is published"
-git -C "$site" push
+xmllint --noout "$appcast"
+git -C "$site" commit -m "fix(site): Wi-Fi Refill $version is published" -- wifi-refill/appcast.xml
 
 sed -i '' -E "s/^  version \".*\"/  version \"$version\"/; s/^  sha256 \".*\"/  sha256 \"$sha\"/" "$tap/Casks/wifi-refill.rb"
-git -C "$tap" commit -am "Wi-Fi Refill $version"
+ruby -c "$tap/Casks/wifi-refill.rb" > /dev/null
+git -C "$tap" commit -m "Wi-Fi Refill $version" -- Casks/wifi-refill.rb
+
+echo "Publishing…"
+git push origin main
+gh release create "v$version" "$dmg" --repo hweihwang/wifi-refill --target main --title "Wi-Fi Refill $version" --notes "$notes"
+git fetch --tags --quiet
+git -C "$site" push
 git -C "$tap" push
 echo "Published $version."
