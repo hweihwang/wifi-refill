@@ -62,7 +62,7 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 
 | To | When | Why |
 |---|---|---|
-| `captive.apple.com` | When your Mac joins a network, wakes, or a cafe session is due to end | The same check macOS uses to notice a login page |
+| `captive.apple.com` | When your Mac joins a network or wakes, and on a cafe network when the session is due to end and every few minutes before that | The same check macOS uses to notice a login page |
 | The login page's own servers and your Wi-Fi router | Only on a supported login page you agreed to | To press the login button |
 | `hweihwang.com` | Once a day | To look for updates |
 | `github.com` | When an update downloads | The update itself |

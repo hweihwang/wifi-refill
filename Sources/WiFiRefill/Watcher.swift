@@ -59,6 +59,8 @@ final class Watcher {
     private let logger = Logger(subsystem: "com.hweihwang.WiFiRefill", category: "watcher")
     private var router: String?
     private var sessionEnd: Date?
+    /// The login page the person answered Not Now for, until the Mac joins another network or they choose Check Now.
+    private var notNowProfile: String?
     private var joinAttempt = 0
     /// Bumps on every network change and pause; results of checks that started earlier are dropped.
     private var generation = 0
@@ -82,6 +84,7 @@ final class Watcher {
     }
 
     func check(reason: String) {
+        if reason == "Check Now" { notNowProfile = nil }
         timer?.invalidate()
         guard !paused else { status = .paused; return }
         guard !running else { pending = reason; return }
@@ -119,6 +122,7 @@ final class Watcher {
         if let current = Gateway.current(), current != router {
             router = current
             sessionEnd = nil
+            notNowProfile = nil
         }
         let cafe = profiles.first { $0.router == router && $0.allowed }
         let result = await client.probe()
@@ -156,11 +160,16 @@ final class Watcher {
                 status = .turnedOff(session.network)
                 return schedule(nil)
             }
+            if known == nil, session.profile == notNowProfile {
+                status = .notNow(session.network)
+                return schedule(nil)
+            }
             if known == nil {
                 status = .asking(session.network)
                 let allowed = await askPermission?(session) ?? false
                 guard started == generation, !paused else { return }
                 guard allowed else {
+                    notNowProfile = session.profile
                     status = .notNow(session.network)
                     return schedule(nil)
                 }
