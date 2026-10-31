@@ -66,6 +66,8 @@ final class Watcher {
     /// The last router seen; a short gap without one (a Wi-Fi blip, sleep) keeps the session end.
     private var lastRouter: String?
     private var sessionEnd: Date?
+    /// When the Mac joined the current network.
+    private var joined = Date()
     /// The login page the person answered Not Now for, until the Mac joins another network or they choose Check Now.
     private var notNowProfile: String?
     private var joinAttempt = 0
@@ -134,6 +136,7 @@ final class Watcher {
         let current = Gateway.current()
         if let current, current != lastRouter {
             lastRouter = current
+            joined = Date()
             sessionEnd = nil
             notNowProfile = nil
         }
@@ -149,7 +152,7 @@ final class Watcher {
             joinAttempt = 0
             if let end = sessionEnd, now >= end.addingTimeInterval(Schedule.endingWindow) { sessionEnd = nil }
             status = cafe.map { .loggedIn($0.network, until: sessionEnd) } ?? .noLoginPage
-            schedule(Schedule.next(after: .online, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil))
+            schedule(Schedule.next(after: .online, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil, joined: joined))
         case .offline:
             status = .offline
             schedule(Schedule.next(after: .offline, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil, joinAttempt: joinAttempt))

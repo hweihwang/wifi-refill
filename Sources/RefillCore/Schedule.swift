@@ -4,7 +4,8 @@ import Foundation
 ///
 /// Network changes and waking from sleep always trigger a check. On top of that, on a cafe network Wi-Fi Refill
 /// checks right when the session is due to end and every few minutes before it, in case the router ends it early.
-/// On any other network it checks nothing until the next network change.
+/// On any other network it checks every few minutes for the first hours after joining, because a cafe network where
+/// the person is already logged in looks like any other until its session ends, and then stops.
 public enum Schedule {
     /// The longest gap between checks on a cafe network.
     public static let watchdog: TimeInterval = 300
@@ -16,14 +17,16 @@ public enum Schedule {
     public static let retry: TimeInterval = 20
     /// Right after joining a network, while it is still getting an address.
     public static let joinRetries: [TimeInterval] = [2, 5, 10]
+    /// How long after joining an unknown network Wi-Fi Refill keeps looking for a login page.
+    public static let discoveryWindow: TimeInterval = 3 * 60 * 60
 
     public enum Outcome: Sendable {
         case online, loggedIn, loginFailed, unsupportedPage, waitingForUser, offline
     }
 
     /// Seconds until the next check, or nil to wait for the next network change or wake.
-    /// `joinAttempt` counts offline results since the last network change.
-    public static func next(after outcome: Outcome, now: Date, sessionEnd: Date?, onCafe: Bool, joinAttempt: Int = .max) -> TimeInterval? {
+    /// `joinAttempt` counts offline results since the last network change; `joined` is when the Mac joined this network.
+    public static func next(after outcome: Outcome, now: Date, sessionEnd: Date?, onCafe: Bool, joinAttempt: Int = .max, joined: Date = .distantPast) -> TimeInterval? {
         switch outcome {
         case .loggedIn:
             return untilEnd(now: now, sessionEnd: sessionEnd)
@@ -35,7 +38,7 @@ public enum Schedule {
             if joinAttempt < joinRetries.count { return joinRetries[joinAttempt] }
             return onCafe ? watchdog : nil
         case .online:
-            guard onCafe else { return nil }
+            guard onCafe else { return now.timeIntervalSince(joined) < discoveryWindow ? watchdog : nil }
             if let sessionEnd, now >= sessionEnd, now < sessionEnd.addingTimeInterval(endingWindow) { return ending }
             return untilEnd(now: now, sessionEnd: sessionEnd)
         }

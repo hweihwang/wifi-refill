@@ -1,4 +1,5 @@
-/// The Ruijie Cloud one-click flow recorded at a cafe on 2026-10-31 (curl -v at the moment the session ended).
+/// The Ruijie Cloud one-click flow recorded at a cafe on 2026-10-31 (curl -v at the moment the session ended, at
+/// 14:59 and again at 17:01, which confirmed the 302 from /api/auth/wifidog).
 /// Identifiers are replaced: router id and serial, the Mac's address, the public address, signatures and the session.
 /// The `/api/auth/direct/` reply follows the shape the page's own script reads (oneClickLogin.js: success, result.logonUrl).
 enum RuijieFixture {

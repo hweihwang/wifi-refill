@@ -18,11 +18,13 @@ Many cafes put their Wi-Fi behind a login page with a single "connect" button, a
 Your Mac stays on the Wi-Fi, but nothing loads until you open a page like neverssl.com and press the button again.
 
 Wi-Fi Refill presses it for you. It learns from the login page how long a session lasts, checks when it is due to
-end, and logs you back in. On networks without a login page it does nothing until your Mac joins another network.
+end, and logs you back in. On a network without a login page it looks every five minutes for the first three hours,
+then stays quiet until your Mac joins another network.
 
 - **No setup.** No accounts and no passwords. It asks once per network before it logs in.
 - **Quiet.** It checks when your Mac joins a network or wakes up, when a session is due to end, and every five minutes
-  on a cafe network in case the router ends it early. Nothing else.
+  on a cafe network in case the router ends it early. Other networks get the same five-minute check for three hours
+  after joining, then nothing.
 - **Careful.** It only presses buttons on login pages it was tested against, and it only talks to that login page's
   own servers and your Wi-Fi router.
 
@@ -63,7 +65,7 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 
 | To | When | Why |
 |---|---|---|
-| `captive.apple.com` | When your Mac joins a network or wakes, and on a cafe network when the session is due to end and every few minutes before that | The same check macOS uses to notice a login page |
+| `captive.apple.com` | When your Mac joins a network or wakes; on a cafe network when the session is due to end and every five minutes; on other networks every five minutes for three hours after joining | The same check macOS uses to notice a login page |
 | The login page's own servers | When a supported login page appears | To read the page before asking you, and to log in once you agree |
 | Your Wi-Fi router | After you agree, on that network | The last step of the login |
 | `hweihwang.com` | Once a day | To look for updates |

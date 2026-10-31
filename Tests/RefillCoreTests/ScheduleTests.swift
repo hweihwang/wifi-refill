@@ -5,6 +5,13 @@ import RefillCore
 struct ScheduleTests {
     let now = Date(timeIntervalSince1970: 1_800_000_000)
 
+    @Test func keepsLookingForALoginPageForAFewHoursAfterJoining() {
+        let joined = now.addingTimeInterval(-3600)
+        #expect(Schedule.next(after: .online, now: now, sessionEnd: nil, onCafe: false, joined: joined) == Schedule.watchdog)
+        let longAgo = now.addingTimeInterval(-Schedule.discoveryWindow - 1)
+        #expect(Schedule.next(after: .online, now: now, sessionEnd: nil, onCafe: false, joined: longAgo) == nil)
+    }
+
     @Test func waitsForTheNextNetworkChangeOffCafeNetworks() {
         #expect(Schedule.next(after: .online, now: now, sessionEnd: nil, onCafe: false) == nil)
         #expect(Schedule.next(after: .offline, now: now, sessionEnd: nil, onCafe: false) == nil)
