@@ -198,16 +198,23 @@ final class Watcher {
                 remember(session)
                 // The person may have taken a while; start over so the login page's session is fresh.
                 session = try await driver.prepare(from: entry, router: router, client: client)
-                guard stillApplies(started), session.profile == consented else { return }
+                guard stillApplies(started) else { return }
+                // A different login page now: the answer was for another one, so look again and ask again.
+                guard session.profile == consented else { throw LoginError.unexpected("The login page changed while you were deciding.") }
             }
 
             status = .loggingIn(session.network)
             let begun = Date()
             try await driver.login(session, client: client)
             guard stillApplies(started) else { return }
-            // Count it only once Apple's check page comes through.
-            guard await client.probe() == .online else { throw LoginError.unexpected("Still not online after logging in.") }
-            guard stillApplies(started) else { return }
+            // Count it only once Apple's check page comes through; routers can take a moment to open up.
+            var online = false
+            for attempt in 0..<3 where !online {
+                if attempt > 0 { try await Task.sleep(for: .seconds(1)) }
+                online = await client.probe() == .online
+                guard stillApplies(started) else { return }
+            }
+            guard online else { throw LoginError.unexpected("Still not online after logging in.") }
 
             let seconds = Date().timeIntervalSince(begun)
             sessionEnd = session.minutes.map { Date().addingTimeInterval(TimeInterval($0 * 60)) }

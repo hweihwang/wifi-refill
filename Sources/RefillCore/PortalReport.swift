@@ -52,7 +52,8 @@ public enum PortalReport {
         let port = parts?.port.map { ":\($0)" } ?? ""
         let path = (parts?.path ?? "").split(separator: "/", omittingEmptySubsequences: false).map { $0.isEmpty ? "" : known(String($0)) }.joined(separator: "/")
         let names = parts?.queryItems?.map { known($0.name) } ?? []
-        return "\(parts?.scheme ?? "*")://\(hideHost(parts?.host ?? "*"))\(port)\(path)" + (names.isEmpty ? "" : "?" + names.joined(separator: "&"))
+        let scheme = ["http", "https"].contains(parts?.scheme) ? parts!.scheme! : "*"
+        return "\(scheme)://\(hideHost(parts?.host ?? "*"))\(port)\(path)" + (names.isEmpty ? "" : "?" + names.joined(separator: "&"))
     }
 
     static func known(_ word: String) -> String {
@@ -60,7 +61,7 @@ public enum PortalReport {
     }
 
     /// Router addresses in private ranges help a driver author and identify nobody; other IP addresses could.
-    /// Host name labels with long digit runs are replaced too.
+    /// Of a host name only the last two labels stay, the domain that names the vendor; labels before them become *.
     public static func hideHost(_ host: String) -> String {
         if host.contains(":") { return "ip-address" }
         if let match = host.wholeMatch(of: /(\d{1,3})\.(\d{1,3})\.\d{1,3}\.\d{1,3}/) {
@@ -68,7 +69,8 @@ public enum PortalReport {
             let isPrivate = first == 10 || (first == 192 && second == 168) || (first == 172 && (16...31).contains(second))
             return isPrivate ? host : "ip-address"
         }
-        return host.split(separator: ".").map { $0.contains(/\d{4,}/) ? "*" : String($0) }.joined(separator: ".")
+        let labels = host.split(separator: ".").map(String.init)
+        return (labels.dropLast(2).map { _ in "*" } + labels.suffix(2)).joined(separator: ".")
     }
 
     static func attribute(_ name: String, in attributes: String) -> String? {

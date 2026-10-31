@@ -22,13 +22,18 @@ notary=(--key "$APPLE_API_KEY" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API
 fail() { echo "$1" >&2; exit 1; }
 grep -q "^## $version" CHANGELOG.md || fail "CHANGELOG.md has no section for $version"
 [[ -z $(git status --porcelain) ]] || fail "Commit or stash your changes first."
+commit=$(git rev-parse HEAD)
 if $publish; then
+    [[ $(git rev-parse --abbrev-ref HEAD) == main ]] || fail "Release from main."
+    [[ -z $(git ls-remote --tags origin "v$version") ]] || fail "The tag v$version already exists."
     # Check everything publishing needs before anything is built or pushed, so a release never goes out halfway.
     for repo in "$site" "$tap"; do
         [[ -d $repo/.git ]] || fail "Missing clone: $repo"
         [[ $(git -C "$repo" rev-parse --abbrev-ref HEAD) == main ]] || fail "$repo is not on main"
         git -C "$repo" diff --cached --quiet || fail "$repo has staged changes"
     done
+    git -C "$site" ls-files --error-unmatch wifi-refill/appcast.xml > /dev/null 2>&1 || fail "Commit the appcast in $site first"
+    git -C "$tap" ls-files --error-unmatch Casks/wifi-refill.rb > /dev/null 2>&1 || fail "Commit the cask in $tap first"
     grep -q '<language>en</language>' "$site/wifi-refill/appcast.xml" || fail "The appcast has no channel header"
     git -C "$site" diff --quiet -- wifi-refill/appcast.xml || fail "The appcast has uncommitted changes"
     git -C "$tap" diff --quiet -- Casks/wifi-refill.rb || fail "The cask has uncommitted changes"
@@ -106,7 +111,7 @@ git -C "$tap" commit -m "Wi-Fi Refill $version" -- Casks/wifi-refill.rb
 
 echo "Publishing…"
 git push origin main
-gh release create "v$version" "$dmg" --repo hweihwang/wifi-refill --target main --title "Wi-Fi Refill $version" --notes "$notes"
+gh release create "v$version" "$dmg" --repo hweihwang/wifi-refill --target "$commit" --title "Wi-Fi Refill $version" --notes "$notes"
 git fetch --tags --quiet
 git -C "$site" push
 git -C "$tap" push

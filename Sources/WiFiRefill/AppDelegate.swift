@@ -15,7 +15,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Replacing the app drops its login item; register again unless the person turned it off or must approve it.
-        if UserDefaults.standard.object(forKey: "openAtLogin") as? Bool ?? true, SMAppService.mainApp.status == .notRegistered {
+        // A freshly installed app reports .notFound rather than .notRegistered.
+        let loginItem = SMAppService.mainApp.status
+        if UserDefaults.standard.object(forKey: "openAtLogin") as? Bool ?? true, loginItem != .enabled, loginItem != .requiresApproval {
             setOpenAtLogin(true)
         }
         let menu = NSMenu()
@@ -188,8 +190,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             alert.addButton(withTitle: L("Cancel"))
             switch alert.runModal() {
             case .alertFirstButtonReturn:
-                let host = chain.compactMap(\.location).first?.host ?? "unknown"
-                NSWorkspace.shared.open(PortalReport.issueURL(repository: Self.repository, title: "Login page: \(PortalReport.hideHost(host))", body: text.string))
+                // A fixed title: everything sent is in the preview the person could edit.
+                NSWorkspace.shared.open(PortalReport.issueURL(repository: Self.repository, title: "Login page report", body: text.string))
             case .alertSecondButtonReturn:
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(text.string, forType: .string)

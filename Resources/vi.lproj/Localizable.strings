@@ -43,6 +43,7 @@
 "Still not online after logging in." = "Đã đăng nhập nhưng vẫn chưa vào được mạng.";
 "The login page did not answer." = "Trang đăng nhập không phản hồi.";
 "The login page did not name the router." = "Trang đăng nhập không cho biết router.";
+"The login page changed while you were deciding." = "Trang đăng nhập đã thay đổi trong lúc bạn đang chọn.";
 
 /* About */
 "Logs your Mac back in when cafe Wi-Fi logs you out." = "Tự đăng nhập lại khi Wi-Fi quán cà phê đăng xuất máy Mac của bạn.";
