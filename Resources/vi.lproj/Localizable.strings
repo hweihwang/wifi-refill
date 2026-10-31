@@ -1,0 +1,64 @@
+/* Menu */
+"Check Now" = "Kiểm tra ngay";
+"Open Login Page" = "Mở trang đăng nhập";
+"Report This Login Page…" = "Báo cáo trang đăng nhập này…";
+"Allow Local Network Access…" = "Cho phép truy cập mạng cục bộ…";
+"Log In Automatically" = "Tự động đăng nhập";
+"Forget This Network" = "Quên mạng này";
+"Networks" = "Mạng đã lưu";
+"Pause" = "Tạm dừng";
+"Open at Login" = "Mở khi đăng nhập máy";
+"Check for Updates…" = "Kiểm tra cập nhật…";
+"About Wi-Fi Refill" = "Giới thiệu Wi-Fi Refill";
+"Show Log" = "Xem nhật ký";
+"Quit Wi-Fi Refill" = "Thoát Wi-Fi Refill";
+"Logged you back in once today" = "Hôm nay đã đăng nhập lại cho bạn 1 lần";
+"Logged you back in %d times today" = "Hôm nay đã đăng nhập lại cho bạn %d lần";
+
+/* Status */
+"Paused" = "Đang tạm dừng";
+"Offline" = "Không có mạng";
+"This network has no login page" = "Mạng này không có trang đăng nhập";
+"This login page isn't supported yet." = "Chưa hỗ trợ trang đăng nhập này.";
+"Waiting for your answer about %@" = "Đang chờ bạn trả lời về %@";
+"Not logged in to %@" = "Chưa đăng nhập vào %@";
+"Automatic login is off for %@" = "Đã tắt tự động đăng nhập cho %@";
+"Logging in to %@…" = "Đang đăng nhập vào %@…";
+"%@: logged in" = "%@: đã đăng nhập";
+"%@: logged in until %@" = "%@: đã đăng nhập đến %@";
+"%@: logging in again soon" = "%@: sắp đăng nhập lại";
+"Can't reach the Wi-Fi router" = "Không kết nối được tới router Wi-Fi";
+"Couldn't log in: %@" = "Không đăng nhập được: %@";
+
+/* Login page errors */
+"This Ruijie gateway type isn't supported yet." = "Chưa hỗ trợ loại gateway Ruijie này.";
+"This login page has no One-click Login." = "Trang đăng nhập này không có One-click Login.";
+"The login page did not start a session." = "Trang đăng nhập không mở phiên đăng nhập.";
+"The login page named a different router." = "Trang đăng nhập chỉ tới một router khác.";
+"The login page pointed somewhere other than the router." = "Trang đăng nhập chỉ tới một nơi không phải router.";
+"The login page refused the login." = "Trang đăng nhập từ chối đăng nhập.";
+"The login page lost its session." = "Trang đăng nhập đã mất phiên.";
+
+/* About */
+"Logs your Mac back in when cafe Wi-Fi logs you out." = "Tự đăng nhập lại khi Wi-Fi quán cà phê đăng xuất máy Mac của bạn.";
+
+/* Report */
+"Report this login page" = "Báo cáo trang đăng nhập này";
+"This is everything the report contains. It lists how the page is built, so a driver can be written for it, and nothing that identifies you or your Mac. GitHub opens with it filled in, and nothing is sent until you submit it there." = "Đây là toàn bộ nội dung báo cáo. Nó chỉ mô tả cách trang được dựng để có thể viết driver cho trang này, không có gì nhận diện bạn hay máy Mac của bạn. GitHub sẽ mở ra với nội dung đã điền sẵn, và chưa có gì được gửi đi cho tới khi bạn bấm gửi ở đó.";
+"Open GitHub" = "Mở GitHub";
+"Copy" = "Sao chép";
+"Cancel" = "Huỷ";
+
+/* Consent */
+"Log in to %@ automatically?" = "Tự động đăng nhập vào %@?";
+"This Wi-Fi asks you to log in with its One-click Login button. Wi-Fi Refill can press it for you now and each time the network logs you out. Logging in accepts the network's terms of use.\n\nThe first time, macOS may ask to let Wi-Fi Refill reach devices on your local network. Allow it, so Wi-Fi Refill can reach the cafe's router." = "Wi-Fi này yêu cầu đăng nhập bằng nút One-click Login. Wi-Fi Refill có thể bấm nút đó giúp bạn ngay bây giờ và mỗi khi mạng đăng xuất bạn. Khi đăng nhập, bạn đồng ý với điều khoản sử dụng của mạng này.\n\nLần đầu, macOS có thể hỏi có cho Wi-Fi Refill truy cập các thiết bị trong mạng cục bộ không. Hãy chọn Cho phép để Wi-Fi Refill kết nối được tới router của quán.";
+"Not Now" = "Để sau";
+
+/* Welcome */
+"Wi-Fi Refill is in your menu bar" = "Wi-Fi Refill nằm trên thanh menu";
+"Look for the cup at the top right of your screen." = "Tìm biểu tượng tách cà phê ở góc trên bên phải màn hình.";
+"When cafe Wi-Fi logs you out, Wi-Fi Refill logs you back in, usually within seconds." = "Khi Wi-Fi quán cà phê đăng xuất bạn, Wi-Fi Refill đăng nhập lại, thường chỉ trong vài giây.";
+"It asks once per network before it logs in, and never needs a password." = "Ứng dụng hỏi bạn một lần cho mỗi mạng trước khi đăng nhập, và không bao giờ cần mật khẩu.";
+"Works with Ruijie Cloud login pages that have a One-click Login button. Met another kind? Report it from the menu." = "Hoạt động với trang đăng nhập Ruijie Cloud có nút One-click Login. Gặp loại trang khác? Báo cáo từ menu.";
+"Open Wi-Fi Refill when you log in to your Mac" = "Mở Wi-Fi Refill khi bạn đăng nhập vào máy Mac";
+"Done" = "Xong";

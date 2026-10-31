@@ -53,7 +53,7 @@ import Testing
 
     @Test func stopsAtGatewayTypesNobodyHasChecked() async throws {
         FakeNetwork.serve(RuijieFixture.routes(isEG: "2"))
-        await #expect(throws: LoginError.unsupported("This Ruijie gateway type (2) isn't supported yet.")) { try await prepare() }
+        await #expect(throws: LoginError.unsupported("This Ruijie gateway type isn't supported yet.")) { try await prepare() }
         #expect(FakeNetwork.posted(to: "/api/auth/direct/") == nil)
     }
 

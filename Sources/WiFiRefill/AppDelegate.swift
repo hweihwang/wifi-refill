@@ -90,7 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .paused: L("Paused")
         case .offline: L("Offline")
         case .noLoginPage: L("This network has no login page")
-        case .unsupported(let reason): reason
+        case .unsupported(let reason): L(reason)
         case .asking(let network): String(format: L("Waiting for your answer about %@"), network)
         case .notNow(let network): String(format: L("Not logged in to %@"), network)
         case .turnedOff(let network): String(format: L("Automatic login is off for %@"), network)
@@ -100,7 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             String(format: L("%@: logged in until %@"), network, Log.time(until))
         case .loggedIn(let network, _): String(format: L("%@: logging in again soon"), network)
         case .routerUnreachable: L("Can't reach the Wi-Fi router")
-        case .failed(let reason): String(format: L("Couldn't log in: %@"), reason)
+        case .failed(let reason): String(format: L("Couldn't log in: %@"), L(reason))
         }
     }
 

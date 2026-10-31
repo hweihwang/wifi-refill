@@ -2,26 +2,54 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Wi-Fi Refill</string>
 	<key>CFBundleExecutable</key>
-	<string>WifiAutologin</string>
+	<string>WiFiRefill</string>
+	<key>CFBundleIconFile</key>
+	<string>WiFiRefill</string>
+	<key>CFBundleIconName</key>
+	<string>WiFiRefill</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.hweihwang.WifiAutologin</string>
+	<string>com.hweihwang.WiFiRefill</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>vi</string>
+	</array>
 	<key>CFBundleName</key>
-	<string>Wi-Fi Autologin</string>
+	<string>Wi-Fi Refill</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>0.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<!-- Login pages and routers speak plain HTTP, and Apple's check page is HTTP by design. -->
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Hoang Pham. MIT License.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Wi-Fi Refill reaches the cafe's Wi-Fi router to finish logging you in.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://hweihwang.com/wifi-refill/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>sroi5ABWNSzW3yYVCDBAvS3Hxueanv9a5yvPCZSlUj4=</string>
 </dict>
 </plist>

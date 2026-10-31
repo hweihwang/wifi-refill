@@ -24,7 +24,7 @@ public enum RuijieCloud: PortalDriver {
             throw LoginError.unexpected("The login page did not start a session.")
         }
         // IS_EG names the gateway type. Only cloud one-click (0) has been checked on a real network.
-        if let type = params["IS_EG"], type != "0" { throw LoginError.unsupported("This Ruijie gateway type (\(type)) isn't supported yet.") }
+        if let type = params["IS_EG"], type != "0" { throw LoginError.unsupported("This Ruijie gateway type isn't supported yet.") }
         guard params["gw_address"] == router, let port = params["gw_port"] else {
             throw LoginError.unexpected("The login page named a different router.")
         }
