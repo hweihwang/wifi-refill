@@ -78,10 +78,7 @@ final class Watcher {
 
     func start() {
         monitor.pathUpdateHandler = { [weak self] _ in
-            Task { @MainActor in
-                self?.joinAttempt = 0
-                self?.restart(reason: "network change")
-            }
+            Task { @MainActor in self?.networkChanged() }
         }
         monitor.start(queue: .main)
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
@@ -119,6 +116,17 @@ final class Watcher {
     func forget(_ id: String) {
         profiles.removeAll { $0.id == id }
         restart(reason: "network forgotten")
+    }
+
+    /// macOS also reports a change while the Mac stays on the same network, for example when a login opens up the
+    /// internet. Only a new router makes the running check's results stale; otherwise the check finishes first.
+    private func networkChanged() {
+        joinAttempt = 0
+        if Gateway.current() == router {
+            check(reason: "network change")
+        } else {
+            restart(reason: "network change")
+        }
     }
 
     /// Cancels the running check, whose results no longer apply, and starts a new one.

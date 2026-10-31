@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Fixes a case where the internet coming back right after a login interrupted Wi-Fi Refill before it noted the login. You were logged in, but the menu did not count it, and the end of the next session could be caught up to five minutes late.
+
 ## 1.0.0
 
 - Logs you back in to Ruijie Cloud login pages with a One-click Login button when the cafe's Wi-Fi ends your session.
