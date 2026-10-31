@@ -165,7 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func reportLoginPage() {
         Task {
-            let chain = await watcher.reportChain()
+            let chain = watcher.lastProbe
             let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
             let system = "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)"
             let summary = PortalReport.summary(of: chain, app: version, system: system)
@@ -173,10 +173,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSApp.activate()
             let alert = NSAlert()
             alert.messageText = L("Report this login page")
-            alert.informativeText = L("This is everything the report contains. It lists how the page is built, so a driver can be written for it, and nothing that identifies you or your Mac. GitHub opens with it filled in, and nothing is sent until you submit it there.")
+            alert.informativeText = L("This is everything the report contains: how the page is built, with unfamiliar names replaced. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there.")
             let text = NSTextView(frame: NSRect(x: 0, y: 0, width: 460, height: 220))
             text.string = summary
-            text.isEditable = false
+            text.isEditable = true
+            text.isRichText = false
             text.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
             let scroll = NSScrollView(frame: text.frame)
             scroll.documentView = text
@@ -188,10 +189,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             switch alert.runModal() {
             case .alertFirstButtonReturn:
                 let host = chain.compactMap(\.location).first?.host ?? "unknown"
-                NSWorkspace.shared.open(PortalReport.issueURL(repository: Self.repository, title: "Login page: \(PortalReport.hideAddress(host))", body: summary))
+                NSWorkspace.shared.open(PortalReport.issueURL(repository: Self.repository, title: "Login page: \(PortalReport.hideHost(host))", body: text.string))
             case .alertSecondButtonReturn:
                 NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(summary, forType: .string)
+                NSPasteboard.general.setString(text.string, forType: .string)
             default:
                 break
             }

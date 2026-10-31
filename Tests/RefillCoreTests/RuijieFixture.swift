@@ -9,17 +9,19 @@ enum RuijieFixture {
     static func routes(
         isEG: String = "0",
         scriptTarget: String? = nil,
-        settings: String = #"{"post_url":"https://www.google.com/","oneclick":{"oneclick_validity":"60","oneclick_qos":{"up_rate":"10000000","down_rate":"10000000"},"oneclick_times":"0"},"custom_html":{"login_options":["pass"],"lang":["en_US"]}}"#,
+        routerStatus: Int = 302,
+        settings: String? = #"{"post_url":"https://www.google.com/","oneclick":{"oneclick_validity":"60","oneclick_qos":{"up_rate":"10000000","down_rate":"10000000"},"oneclick_times":"0"},"custom_html":{"login_options":["pass"],"lang":["en_US"]}}"#,
         direct: String = #"{"success":true,"timestamp":1793433590000,"message":"ok","result":{"logonUrl":"http://192.168.110.1:2060/wifidog/auth?token=7e3a9c1b5d2f4e6a8c0b1d3f5a7c9e1b&phoneNumber=0200.0000.0001"}}"#
     ) -> [String: FakeNetwork.Response] {
-        [
+        var routes: [String: FakeNetwork.Response] = [
             "captive.apple.com/hotspot-detect.html": .init(status: 302, location: "https://\(portal)/auth/wifidogAuth/login/?\(gatewayQuery)"),
             "\(portal)/auth/wifidogAuth/login/": .init(body: "<script>self.location.href='\(scriptTarget ?? "/api/auth/wifidog?stage=portal&\(gatewayQuery)")'</script>"),
             "\(portal)/api/auth/wifidog": .init(status: 302, location: "/download/static/maccauth/src/index.html?RES=./../expand/res/e6gosjyxkvkzvuabekw&IS_EG=\(isEG)&sessionId=\(sessionId)"),
             "\(portal)/download/static/maccauth/src/index.html": .init(body: "<html>login page</html>"),
-            "\(portal)/download/static/maccauth/expand/res/e6gosjyxkvkzvuabekw/config.json": .init(body: settings),
             "\(portal)/api/auth/direct/": .init(body: direct),
-            "192.168.110.1/wifidog/auth": .init(status: 302, location: "https://www.google.com/?gw_id=0a1b2c3d4e5f"),
+            "192.168.110.1/wifidog/auth": .init(status: routerStatus, location: "https://www.google.com/?gw_id=0a1b2c3d4e5f"),
         ]
+        routes["\(portal)/download/static/maccauth/expand/res/e6gosjyxkvkzvuabekw/config.json"] = settings.map { .init(body: $0) }
+        return routes
     }
 }

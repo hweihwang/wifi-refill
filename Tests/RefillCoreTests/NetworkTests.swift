@@ -66,12 +66,55 @@ import Testing
     @Test func passesOnTheLoginPagesRefusal() async throws {
         FakeNetwork.serve(RuijieFixture.routes(direct: #"{"success":false,"timestamp":1793430692273,"message":"Session timed out","object":null}"#))
         let session = try await prepare()
-        await #expect(throws: LoginError.refused("Session timed out")) { try await RuijieCloud.login(session, client: client) }
+        await #expect(throws: LoginError.refused("The login page refused the login.")) { try await RuijieCloud.login(session, client: client) }
     }
 
     @Test func keepsTheSessionLengthSensible() async throws {
         FakeNetwork.serve(RuijieFixture.routes(settings: #"{"oneclick":{"oneclick_validity":"100000"}}"#))
         #expect(try await prepare().minutes == 24 * 60)
+    }
+
+    @Test func retriesWhenTheSettingsDoNotLoad() async throws {
+        FakeNetwork.serve(RuijieFixture.routes(settings: nil))
+        await #expect(throws: LoginError.unexpected("Couldn't read the login page's settings.")) { try await prepare() }
+    }
+
+    @Test func treatsAFailedReplyAsARefusalEvenWithALogonAddress() async throws {
+        FakeNetwork.serve(RuijieFixture.routes(direct: #"{"success":false,"result":{"logonUrl":"http://192.168.110.1:2060/wifidog/auth?token=x"}}"#))
+        let session = try await prepare()
+        await #expect(throws: LoginError.refused("The login page refused the login.")) { try await RuijieCloud.login(session, client: client) }
+        #expect(!FakeNetwork.visited.contains("192.168.110.1/wifidog/auth"))
+    }
+
+    @Test func noticesWhenTheRouterSaysNo() async throws {
+        FakeNetwork.serve(RuijieFixture.routes(routerStatus: 500))
+        let session = try await prepare()
+        await #expect(throws: LoginError.unexpected("The router did not accept the login.")) { try await RuijieCloud.login(session, client: client) }
+    }
+
+    @Test(arguments: [
+        "http://192.168.110.1:2060/wifidog/authentication?token=x",
+        "http://192.168.110.1:8080/wifidog/auth?token=x",
+        "http://192.168.110.1/wifidog/auth?token=x",
+        "https://192.168.110.1:2060/wifidog/auth?token=x",
+    ])
+    func acceptsOnlyTheRoutersOwnLoginAddress(logon: String) async throws {
+        FakeNetwork.serve(RuijieFixture.routes(direct: #"{"success":true,"result":{"logonUrl":"\#(logon)"}}"#))
+        let session = try await prepare()
+        await #expect(throws: LoginError.unexpected("The login page pointed somewhere other than the router.")) {
+            try await RuijieCloud.login(session, client: client)
+        }
+        #expect(!FakeNetwork.hosts.contains("192.168.110.1"))
+    }
+
+    @Test func aCancelledLoginNeverReachesTheRouter() async throws {
+        FakeNetwork.serve(RuijieFixture.routes())
+        let session = try await prepare()
+        let client = client
+        let login = Task { try await RuijieCloud.login(session, client: client) }
+        login.cancel()
+        await #expect(throws: (any Error).self) { try await login.value }
+        #expect(!FakeNetwork.visited.contains("192.168.110.1/wifidog/auth"))
     }
 
     @Test func seesAppleSuccessPageAsOnline() async {

@@ -17,12 +17,12 @@ A small Mac menu bar app that logs you back in when the cafe's Wi-Fi logs you ou
 Many cafes put their Wi-Fi behind a login page with a single "connect" button, and end the session after an hour.
 Your Mac stays on the Wi-Fi, but nothing loads until you open a page like neverssl.com and press the button again.
 
-Wi-Fi Refill presses it for you. It notices the moment the session ends, logs you back in, and checks again when the
-next session is due to end. On networks without a login page it does nothing at all.
+Wi-Fi Refill presses it for you. It learns from the login page how long a session lasts, checks when it is due to
+end, and logs you back in. On networks without a login page it does nothing until your Mac joins another network.
 
 - **No setup.** No accounts and no passwords. It asks once per network before it logs in.
-- **Quiet.** It checks when your Mac joins a network or wakes up, right when a session is due to end, and every few
-  minutes on a cafe network in case the router ends it early. Nothing else.
+- **Quiet.** It checks when your Mac joins a network or wakes up, when a session is due to end, and every five minutes
+  on a cafe network in case the router ends it early. Nothing else.
 - **Careful.** It only presses buttons on login pages it was tested against, and it only talks to that login page's
   own servers and your Wi-Fi router.
 
@@ -33,8 +33,9 @@ address `portal-…ruijienetworks.com` in your browser and the button at the bot
 on a live cafe network that logs you out every 60 minutes.
 
 Other login pages are left alone. If you meet one that only needs a button press, choose **Report This Login Page…**
-in the menu. You see the whole report before anything is sent, and it describes how the page is built without any
-values that identify you, your Mac or the network. Reports are how new kinds of login pages get supported.
+in the menu. It describes how the page is built: addresses with unfamiliar names replaced, parameter and form field
+names, and no values. You can read and edit it first, and GitHub opens with it filled in. Reports are how new kinds of
+login pages get supported.
 
 Login pages that ask for a voucher, a room number, a phone number or a password are out of scope.
 
@@ -63,10 +64,11 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 | To | When | Why |
 |---|---|---|
 | `captive.apple.com` | When your Mac joins a network or wakes, and on a cafe network when the session is due to end and every few minutes before that | The same check macOS uses to notice a login page |
-| The login page's own servers and your Wi-Fi router | Only on a supported login page you agreed to | To press the login button |
+| The login page's own servers | When a supported login page appears | To read the page before asking you, and to log in once you agree |
+| Your Wi-Fi router | After you agree, on that network | The last step of the login |
 | `hweihwang.com` | Once a day | To look for updates |
 | `github.com` | When an update downloads | The update itself |
-| `github.com` | Only when you choose to send a report | To open a new issue in your browser, which you review and submit yourself |
+| `github.com` | Only when you choose Open GitHub in a report | The report travels in the page address; it is published only if you submit the issue |
 
 It keeps a short log at `~/Library/Logs/WiFiRefill.log` and its settings on your Mac. It never runs a login page's
 scripts and never follows a login page to other websites.
@@ -76,8 +78,9 @@ scripts and never follows a login page to other websites.
 **Why does the cafe log me out?** The cafe's router gives each login a fixed time, often an hour. When it runs out,
 the router sends every web request to the login page again, while your Mac still shows a working Wi-Fi connection.
 
-**How fast is it?** The login itself takes about one to two seconds. Wi-Fi Refill learns the session length from the
-login page, so it is checking at the moment the session ends.
+**How fast is it?** Wi-Fi Refill learns the session length from the login page and checks when the session is due to
+end, then every two seconds until the router ends it. If the router ends a session early, the next check comes
+within five minutes, or sooner if macOS notices the change.
 
 **What does the cup in the menu bar mean?** Filled: you are on a cafe network and logged in. Outline: nothing to do on
 this network. A warning sign: the last login failed, and the menu says why.

@@ -40,7 +40,10 @@ public final class PortalClient: @unchecked Sendable {
     private let routerSession: URLSession
 
     public init(configuration: URLSessionConfiguration = .ephemeral) {
-        session = URLSession(configuration: Self.prepared(configuration), delegate: NoRedirects(), delegateQueue: nil)
+        // The resource deadline also ends responses that trickle in slowly, which the per-request timeout does not.
+        let main = Self.prepared(configuration)
+        main.timeoutIntervalForResource = 20
+        session = URLSession(configuration: main, delegate: NoRedirects(), delegateQueue: nil)
         // macOS may hold the first request to the router while it asks about Local Network access; wait for the answer.
         let router = Self.prepared(configuration.copy() as! URLSessionConfiguration)
         router.waitsForConnectivity = true
@@ -85,9 +88,12 @@ public final class PortalClient: @unchecked Sendable {
         return try await read(request, with: session).0
     }
 
+    /// The body of a successful response; other statuses throw.
     public func fetch(_ url: URL) async throws -> Data {
         guard url.user == nil, url.password == nil else { throw RequestError.refusedAddress }
-        return try await read(URLRequest(url: url), with: session).0
+        let (data, response) = try await read(URLRequest(url: url), with: session)
+        guard let status = (response as? HTTPURLResponse)?.statusCode, (200..<300).contains(status) else { throw URLError(.badServerResponse) }
+        return data
     }
 
     private func get(_ url: URL, with session: URLSession, maxHops: Int, follow: (URL) -> Bool) async throws -> [Hop] {
@@ -113,7 +119,10 @@ public final class PortalClient: @unchecked Sendable {
         var data = Data()
         for try await byte in bytes {
             data.append(byte)
-            if data.count >= Self.bodyLimit { break }
+            if data.count >= Self.bodyLimit {
+                bytes.task.cancel()
+                break
+            }
         }
         return (data, response)
     }

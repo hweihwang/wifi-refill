@@ -38,13 +38,18 @@
 "The login page pointed somewhere other than the router." = "Trang đăng nhập chỉ tới một nơi không phải router.";
 "The login page refused the login." = "Trang đăng nhập từ chối đăng nhập.";
 "The login page lost its session." = "Trang đăng nhập đã mất phiên.";
+"Couldn't read the login page's settings." = "Không đọc được cài đặt của trang đăng nhập.";
+"The router did not accept the login." = "Router không chấp nhận lần đăng nhập.";
+"Still not online after logging in." = "Đã đăng nhập nhưng vẫn chưa vào được mạng.";
+"The login page did not answer." = "Trang đăng nhập không phản hồi.";
+"The login page did not name the router." = "Trang đăng nhập không cho biết router.";
 
 /* About */
 "Logs your Mac back in when cafe Wi-Fi logs you out." = "Tự đăng nhập lại khi Wi-Fi quán cà phê đăng xuất máy Mac của bạn.";
 
 /* Report */
 "Report this login page" = "Báo cáo trang đăng nhập này";
-"This is everything the report contains. It lists how the page is built, so a driver can be written for it, and nothing that identifies you or your Mac. GitHub opens with it filled in, and nothing is sent until you submit it there." = "Đây là toàn bộ nội dung báo cáo. Nó chỉ mô tả cách trang được dựng để có thể viết driver cho trang này, không có gì nhận diện bạn hay máy Mac của bạn. GitHub sẽ mở ra với nội dung đã điền sẵn, và chưa có gì được gửi đi cho tới khi bạn bấm gửi ở đó.";
+"This is everything the report contains: how the page is built, with unfamiliar names replaced. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there." = "Đây là toàn bộ nội dung báo cáo: cách trang được dựng, các tên lạ đã được thay bằng dấu *. Bạn có thể sửa bất cứ phần nào không muốn chia sẻ. Khi bấm Mở GitHub, nội dung này được gửi tới GitHub qua địa chỉ trang, và chỉ được công khai nếu bạn bấm gửi issue ở đó.";
 "Open GitHub" = "Mở GitHub";
 "Copy" = "Sao chép";
 "Cancel" = "Huỷ";
