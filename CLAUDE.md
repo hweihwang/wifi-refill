@@ -2,7 +2,7 @@
 
 Menu bar app that logs a Mac back in to cafe Wi-Fi login pages. SwiftPM, no Xcode project.
 
-- `Sources/RefillCore`: everything testable. `PortalClient` (HTTP that never follows redirects by itself), `Drivers` and `RuijieCloud` (one login page kind each), `Schedule` (when to check, pure), `PortalReport` (allowlisted summary of unknown pages).
+- `Sources/RefillCore`: everything testable. `PortalClient` (HTTP that never follows redirects by itself, sent straight over the Wi-Fi by `DirectTransport` so a VPN can't hide the login page), `Drivers`, `RuijieCloud` and `AwingExtreme` (one login page kind each), `Gateway` (the Wi-Fi under any VPN), `Schedule` (when to check, pure), `PortalReport` (allowlisted summary of unknown pages).
 - `Sources/WiFiRefill`: AppKit glue. `Watcher` (network events, timers, consent), `AppDelegate` (menu), `WelcomeWindow`.
 - `swift test` replays a recorded real network through `FakeNetwork`. `scripts/install-dev.sh` builds, signs and opens the app. `scripts/release.sh VERSION [--publish]` notarizes, packages and publishes (needs APPLE_API_* env, the Sparkle key, and clones of homebrew-wifi-refill and hweihwang.com next to this repo).
 

@@ -14,11 +14,11 @@ Wi-Fi Refill only presses buttons on login pages someone has tested on a real ne
    addresses, router serial numbers, tokens, signatures and session ids. Keep the shape of each value.
 2. **A driver** in `Sources/RefillCore`, conforming to `PortalDriver`:
    - `entry(in:)` recognises the login page from the probe's answer, by host name, never by page text alone.
-   - `prepare(from:router:client:)` walks the login page up to its button without pressing it. Follow only addresses
+   - `prepare(from:on:client:)` walks the login page up to its button without pressing it. Follow only addresses
      on the login page's own hosts, and stop with `LoginError.unsupported` at anything you have not tested, such as
      another mode of the same vendor.
-   - `login(_:client:)` does what the button does. Send tokens only to the router the page named, and only if it is
-     the Mac's current router.
+   - `login(_:client:)` does what the button does. Send tokens only to the device the page named, and only if it is on
+     the Mac's own network: the current router itself when the page names a router.
 3. **Tests** in `Tests/RefillCoreTests` that replay the recording through `FakeNetwork`: the happy path, and what
    happens when the page points somewhere it should not.
 

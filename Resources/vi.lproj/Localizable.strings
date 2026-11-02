@@ -32,6 +32,7 @@
 
 /* Login page errors */
 "This Ruijie gateway type isn't supported yet." = "Chưa hỗ trợ loại gateway Ruijie này.";
+"This login page asks for your details." = "Trang đăng nhập này yêu cầu thông tin cá nhân của bạn.";
 "This login page has no One-click Login." = "Trang đăng nhập này không có One-click Login.";
 "The login page did not start a session." = "Trang đăng nhập không mở phiên đăng nhập.";
 "The login page named a different router." = "Trang đăng nhập chỉ tới một router khác.";
@@ -57,7 +58,7 @@
 
 /* Consent */
 "Log in to %@ automatically?" = "Tự động đăng nhập vào %@?";
-"This Wi-Fi asks you to log in with its One-click Login button. Wi-Fi Refill can press it for you now and each time the network logs you out. Logging in accepts the network's terms of use.\n\nThe first time, macOS may ask to let Wi-Fi Refill reach devices on your local network. Allow it, so Wi-Fi Refill can reach the cafe's router." = "Wi-Fi này yêu cầu đăng nhập bằng nút One-click Login. Wi-Fi Refill có thể bấm nút đó giúp bạn ngay bây giờ và mỗi khi mạng đăng xuất bạn. Khi đăng nhập, bạn đồng ý với điều khoản sử dụng của mạng này.\n\nLần đầu, macOS có thể hỏi có cho Wi-Fi Refill truy cập các thiết bị trong mạng cục bộ không. Hãy chọn Cho phép để Wi-Fi Refill kết nối được tới router của quán.";
+"This Wi-Fi asks you to press a button on its login page. Wi-Fi Refill can press it for you now and each time the network logs you out. Logging in accepts the network's terms of use.\n\nThe first time, macOS may ask to let Wi-Fi Refill reach devices on your local network. Allow it, so Wi-Fi Refill can reach the cafe's router or Wi-Fi controller." = "Wi-Fi này yêu cầu bấm một nút trên trang đăng nhập. Wi-Fi Refill có thể bấm nút đó giúp bạn ngay bây giờ và mỗi khi mạng đăng xuất bạn. Khi đăng nhập, bạn đồng ý với điều khoản sử dụng của mạng này.\n\nLần đầu, macOS có thể hỏi có cho Wi-Fi Refill truy cập các thiết bị trong mạng cục bộ không. Hãy chọn Cho phép để Wi-Fi Refill kết nối được tới router hoặc bộ điều khiển Wi-Fi của quán.";
 "Not Now" = "Để sau";
 
 /* Welcome */
@@ -65,6 +66,6 @@
 "Look for the cup at the top right of your screen." = "Tìm biểu tượng tách cà phê ở góc trên bên phải màn hình.";
 "When cafe Wi-Fi logs you out, Wi-Fi Refill logs you back in, usually within seconds." = "Khi Wi-Fi quán cà phê đăng xuất bạn, Wi-Fi Refill đăng nhập lại, thường chỉ trong vài giây.";
 "It asks once per network before it logs in, and never needs a password." = "Ứng dụng hỏi bạn một lần cho mỗi mạng trước khi đăng nhập, và không bao giờ cần mật khẩu.";
-"Works with Ruijie Cloud login pages that have a One-click Login button. Met another kind? Report it from the menu." = "Hoạt động với trang đăng nhập Ruijie Cloud có nút One-click Login. Gặp loại trang khác? Báo cáo từ menu.";
+"Works with Ruijie Cloud One-click Login pages and Awing Free Wi-Fi pages, as at Highlands Coffee. Met another kind? Report it from the menu." = "Hoạt động với trang One-click Login của Ruijie Cloud và trang Free Wi-Fi của Awing, như ở Highlands Coffee. Gặp loại trang khác? Báo cáo từ menu.";
 "Open Wi-Fi Refill when you log in to your Mac" = "Mở Wi-Fi Refill khi bạn đăng nhập vào máy Mac";
 "Done" = "Xong";

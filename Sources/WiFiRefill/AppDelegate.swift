@@ -205,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.activate()
         let alert = NSAlert()
         alert.messageText = String(format: L("Log in to %@ automatically?"), session.network)
-        alert.informativeText = L("This Wi-Fi asks you to log in with its One-click Login button. Wi-Fi Refill can press it for you now and each time the network logs you out. Logging in accepts the network's terms of use.\n\nThe first time, macOS may ask to let Wi-Fi Refill reach devices on your local network. Allow it, so Wi-Fi Refill can reach the cafe's router.")
+        alert.informativeText = L("This Wi-Fi asks you to press a button on its login page. Wi-Fi Refill can press it for you now and each time the network logs you out. Logging in accepts the network's terms of use.\n\nThe first time, macOS may ask to let Wi-Fi Refill reach devices on your local network. Allow it, so Wi-Fi Refill can reach the cafe's router or Wi-Fi controller.")
         alert.addButton(withTitle: L("Log In Automatically"))
         alert.addButton(withTitle: L("Open Login Page"))
         alert.addButton(withTitle: L("Not Now"))

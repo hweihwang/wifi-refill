@@ -15,7 +15,8 @@ public enum RuijieCloud: PortalDriver {
         probe.compactMap(\.location).first(where: isPortal)
     }
 
-    public static func prepare(from entry: URL, router: String, client: PortalClient) async throws -> PortalSession {
+    public static func prepare(from entry: URL, on network: LocalNetwork, client: PortalClient) async throws -> PortalSession {
+        let router = network.router
         // Stay on Ruijie's portal hosts, and stop at the address that carries the session: the page itself is not needed.
         let hops = try await client.get(entry) { isPortal($0) && !$0.absoluteString.contains("sessionId=") }
         // Only addresses on the portal hosts count, so a redirect elsewhere cannot supply a session or a router.

@@ -58,11 +58,11 @@ final class Watcher {
     }
 
     private let defaults = UserDefaults.standard
-    private let client = PortalClient()
+    private let portal = PortalClient()
     private let monitor = NWPathMonitor()
     private let logger = Logger(subsystem: "com.hweihwang.WiFiRefill", category: "watcher")
-    /// The current router, nil while there is none.
-    private var router: String?
+    /// The network the Mac is on, nil while there is none.
+    private var network: LocalNetwork?
     /// The last router seen; a short gap without one (a Wi-Fi blip, sleep) keeps the session end.
     private var lastRouter: String?
     private var sessionEnd: Date?
@@ -119,10 +119,11 @@ final class Watcher {
     }
 
     /// macOS also reports a change while the Mac stays on the same network, for example when a login opens up the
-    /// internet. Only a new router makes the running check's results stale; otherwise the check finishes first.
+    /// internet. Only another network (interface, router, address or mask) makes the running check's results stale;
+    /// otherwise the check finishes first.
     private func networkChanged() {
         joinAttempt = 0
-        if Gateway.current() == router {
+        if Gateway.current() == network {
             check(reason: "network change")
         } else {
             restart(reason: "network change")
@@ -142,14 +143,16 @@ final class Watcher {
 
     private func evaluate(reason: String, started: Int) async {
         let current = Gateway.current()
-        if let current, current != lastRouter {
-            lastRouter = current
+        if let current, current.router != lastRouter {
+            lastRouter = current.router
             joined = Date()
             sessionEnd = nil
             notNowProfile = nil
         }
-        router = current
-        let cafe = profiles.first { $0.router == current && $0.allowed }
+        network = current
+        let cafe = profiles.first { $0.router == current?.router && $0.allowed }
+        // Every request of this check goes out on the network it started on, or not at all.
+        let client = portal.on(current)
         let result = await client.probe()
         guard stillApplies(started) else { return }
         logger.notice("check (\(reason, privacy: .public)): \(Self.describe(result), privacy: .public)")
@@ -167,20 +170,20 @@ final class Watcher {
             joinAttempt += 1
         case .portal(let hops):
             lastProbe = hops
-            await logIn(hops, started: started)
+            await logIn(hops, client: client, started: started)
         }
     }
 
-    private func logIn(_ probe: [Hop], started: Int) async {
+    private func logIn(_ probe: [Hop], client: PortalClient, started: Int) async {
         guard let (driver, entry) = Drivers.recognize(probe) else {
             status = .unsupported("This login page isn't supported yet.")
             return schedule(nil)
         }
-        guard let router else {
+        guard let network else {
             return fail(.failed("The login page did not name the router."), code: "no-router", started: started)
         }
         do {
-            var session = try await driver.prepare(from: entry, router: router, client: client)
+            var session = try await driver.prepare(from: entry, on: network, client: client)
             guard stillApplies(started) else { return }
 
             let known = profiles.first { $0.id == session.profile }
@@ -205,7 +208,7 @@ final class Watcher {
                 let consented = session.profile
                 remember(session)
                 // The person may have taken a while; start over so the login page's session is fresh.
-                session = try await driver.prepare(from: entry, router: router, client: client)
+                session = try await driver.prepare(from: entry, on: network, client: client)
                 guard stillApplies(started) else { return }
                 // A different login page now: the answer was for another one, so look again and ask again.
                 guard session.profile == consented else { throw LoginError.unexpected("The login page changed while you were deciding.") }

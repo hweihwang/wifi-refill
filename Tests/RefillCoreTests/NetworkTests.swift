@@ -8,9 +8,13 @@ import Testing
     let allowedHosts: Set<String> = ["captive.apple.com", RuijieFixture.portal, "192.168.110.1"]
 
     func prepare(router: String = "192.168.110.1") async throws -> PortalSession {
+        try await prepare(on: LocalNetwork(interface: "en0", router: router, address: "192.168.110.10", mask: "255.255.255.0"))
+    }
+
+    func prepare(on network: LocalNetwork) async throws -> PortalSession {
         guard case .portal(let probe) = await client.probe() else { throw LoginError.unexpected("no login page") }
         let (driver, entry) = try #require(Drivers.recognize(probe))
-        return try await driver.prepare(from: entry, router: router, client: client)
+        return try await driver.prepare(from: entry, on: network, client: client)
     }
 
     @Test func logsInThroughTheRecordedFlow() async throws {

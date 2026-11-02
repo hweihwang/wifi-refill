@@ -2,7 +2,7 @@ import Foundation
 @testable import RefillCore
 
 /// Answers PortalClient's requests from recorded responses, keyed by host and path, and remembers every request.
-final class FakeNetwork: URLProtocol {
+final class FakeNetwork: Transport {
     struct Response {
         var status = 200
         var location: String?
@@ -18,9 +18,7 @@ final class FakeNetwork: URLProtocol {
     }
 
     static func client() -> PortalClient {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [FakeNetwork.self]
-        return PortalClient(configuration: configuration)
+        PortalClient(transport: FakeNetwork())
     }
 
     /// "host/path" of every request, in order.
@@ -28,43 +26,23 @@ final class FakeNetwork: URLProtocol {
     static var hosts: Set<String> { Set(lock.withLock { log.compactMap(\.url.host) }) }
 
     static func posted(to path: String) -> [String: String]? {
-        let body = lock.withLock { log.last(where: { $0.url.path(percentEncoded: true) == path && $0.body != nil })?.body }
-        return body.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: String] }
+        body(postedTo: path).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: String] }
     }
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    static func body(postedTo path: String) -> Data? {
+        lock.withLock { log.last(where: { $0.url.path(percentEncoded: true) == path && $0.body != nil })?.body }
+    }
 
-    override func startLoading() {
+    func send(_ request: URLRequest, local: Bool, network: LocalNetwork?) async throws -> (Data, HTTPURLResponse) {
+        try Task.checkCancellation()
         let url = request.url!
         let route = Self.lock.withLock {
-            Self.log.append((url, request.httpBody ?? request.httpBodyStream.map(Self.read)))
+            Self.log.append((url, request.httpBody))
             return Self.routes[(url.host ?? "") + url.path(percentEncoded: true)]
         }
-        guard let route else {
-            client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
-            return
-        }
+        guard let route else { throw URLError(.cannotConnectToHost) }
         var headers = ["Content-Type": "text/html"]
         if let location = route.location { headers["Location"] = location }
-        let response = HTTPURLResponse(url: url, statusCode: route.status, httpVersion: "HTTP/1.1", headerFields: headers)!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: Data(route.body.utf8))
-        client?.urlProtocolDidFinishLoading(self)
-    }
-
-    override func stopLoading() {}
-
-    private static func read(_ stream: InputStream) -> Data {
-        stream.open()
-        defer { stream.close() }
-        var data = Data()
-        var buffer = [UInt8](repeating: 0, count: 4096)
-        while stream.hasBytesAvailable {
-            let count = stream.read(&buffer, maxLength: buffer.count)
-            if count <= 0 { break }
-            data.append(buffer, count: count)
-        }
-        return data
+        return (Data(route.body.utf8), HTTPURLResponse(url: url, statusCode: route.status, httpVersion: "HTTP/1.1", headerFields: headers)!)
     }
 }

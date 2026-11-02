@@ -6,6 +6,6 @@ Please report a problem privately through [GitHub's security advisories](https:/
 instead of a public issue. Say what a hostile network or login page could make the app do, and how to reproduce it. I
 will answer within a week and credit you in the release notes unless you prefer otherwise.
 
-Things that are in scope include the app requesting addresses outside the login page's own hosts and the Wi-Fi
-router, sending a login token anywhere but the router, leaking data through the login page report, and updates that
-could be replaced in transit.
+Things that are in scope include the app requesting addresses outside the login page's own hosts and the cafe's
+router or Wi-Fi controller, sending a login token anywhere but the device the page named on the Mac's own network,
+leaking data through the login page report, and updates that could be replaced in transit.

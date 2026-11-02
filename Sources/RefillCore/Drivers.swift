@@ -42,14 +42,14 @@ public enum LoginError: Error, Equatable, CustomStringConvertible {
 public protocol PortalDriver {
     /// Where this driver's login flow starts in the probe's answer, or nil when the page is not its kind.
     static func entry(in probe: [Hop]) -> URL?
-    /// Walks the login page up to its button, without pressing it. `router` is the Mac's current router address.
-    static func prepare(from entry: URL, router: String, client: PortalClient) async throws -> PortalSession
+    /// Walks the login page up to its button, without pressing it. `network` is the network the Mac is on now.
+    static func prepare(from entry: URL, on network: LocalNetwork, client: PortalClient) async throws -> PortalSession
     /// Does what the login button does.
     static func login(_ session: PortalSession, client: PortalClient) async throws
 }
 
 public enum Drivers {
-    public static let all: [any PortalDriver.Type] = [RuijieCloud.self]
+    public static let all: [any PortalDriver.Type] = [RuijieCloud.self, AwingExtreme.self]
 
     public static func recognize(_ probe: [Hop]) -> (driver: any PortalDriver.Type, entry: URL)? {
         for driver in all {
