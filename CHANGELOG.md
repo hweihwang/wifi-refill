@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+- A login page's web view now refuses the camera and microphone and doesn't offer them to the page. In 1.1.0 the refusal was not wired up; macOS still refused, since Wi-Fi Refill has no camera or microphone permission.
+
 ## 1.1.0
 
 - Logs you back in to Awing Free Wi-Fi pages on Extreme Networks Wi-Fi, as at Highlands Coffee.
