@@ -67,6 +67,8 @@ final class DirectTransport: Transport, @unchecked Sendable {
             }
         }
         let state = State(connection)
+        // The deadline must not keep a finished request's state alive until it would have fired.
+        weak var expiring = state
         let queue = queue
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
@@ -103,7 +105,7 @@ final class DirectTransport: Transport, @unchecked Sendable {
                             break
                         }
                     }
-                    let timer = DispatchWorkItem { [weak state] in state?.finish(.failure(URLError(.timedOut))) }
+                    let timer = DispatchWorkItem { expiring?.finish(.failure(URLError(.timedOut))) }
                     state.timer = timer
                     queue.asyncAfter(deadline: .now() + deadline, execute: timer)
                     connection.start(queue: queue)

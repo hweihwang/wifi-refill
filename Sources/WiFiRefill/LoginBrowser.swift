@@ -111,6 +111,8 @@ final class LoginBrowser: NSObject {
             let removal = "for (const name of ['RTCPeerConnection', 'webkitRTCPeerConnection', 'RTCDataChannel']) { try { delete window[name]; } catch (e) {} }"
             controller.addUserScript(WKUserScript(source: removal, injectionTime: .atDocumentStart, forMainFrameOnly: false))
         }
+        // No login page needs the camera or microphone; asking is refused below in any case.
+        Self.setPrivate(configuration.preferences, "_setMediaDevicesEnabled:", false)
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 480, height: 760), configuration: configuration)
         webView.customUserAgent = PortalClient.userAgent
         // WebKit pauses animations on a page it thinks nobody sees, and login pages wait for them (Awing's does). Behind
@@ -311,7 +313,7 @@ extension LoginBrowser: WKUIDelegate {
         false
     }
 
-    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType) async -> WKPermissionDecision {
+    func webView(_ webView: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin, initiatedBy frame: WKFrameInfo, type: WKMediaCaptureType) async -> WKPermissionDecision {
         .deny
     }
 }
