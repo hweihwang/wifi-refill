@@ -2,6 +2,7 @@
 "Check Now" = "Kiểm tra ngay";
 "Open Login Page" = "Mở trang đăng nhập";
 "Report This Login Page…" = "Báo cáo trang đăng nhập này…";
+"Teach Wi-Fi Refill This Login Page…" = "Dạy Wi-Fi Refill trang đăng nhập này…";
 "Allow Local Network Access…" = "Cho phép truy cập mạng cục bộ…";
 "Log In Automatically" = "Tự động đăng nhập";
 "Forget This Network" = "Quên mạng này";
@@ -44,6 +45,7 @@
 "Still not online after logging in." = "Đã đăng nhập nhưng vẫn chưa vào được mạng.";
 "The login page did not answer." = "Trang đăng nhập không phản hồi.";
 "The login page did not name the router." = "Trang đăng nhập không cho biết router.";
+"The login page changed. Teach Wi-Fi Refill again." = "Trang đăng nhập đã thay đổi. Hãy dạy lại Wi-Fi Refill.";
 "The login page changed while you were deciding." = "Trang đăng nhập đã thay đổi trong lúc bạn đang chọn.";
 
 /* About */
@@ -66,6 +68,28 @@
 "Look for the cup at the top right of your screen." = "Tìm biểu tượng tách cà phê ở góc trên bên phải màn hình.";
 "When cafe Wi-Fi logs you out, Wi-Fi Refill logs you back in, usually within seconds." = "Khi Wi-Fi quán cà phê đăng xuất bạn, Wi-Fi Refill đăng nhập lại, thường chỉ trong vài giây.";
 "It asks once per network before it logs in, and never needs a password." = "Ứng dụng hỏi bạn một lần cho mỗi mạng trước khi đăng nhập, và không bao giờ cần mật khẩu.";
-"Works with Ruijie Cloud One-click Login pages and Awing Free Wi-Fi pages, as at Highlands Coffee. Met another kind? Report it from the menu." = "Hoạt động với trang One-click Login của Ruijie Cloud và trang Free Wi-Fi của Awing, như ở Highlands Coffee. Gặp loại trang khác? Báo cáo từ menu.";
+"Knows Ruijie Cloud and Awing login pages. Teach it any other page that only needs button presses, once, from the menu." = "Biết sẵn trang đăng nhập của Ruijie Cloud và Awing. Trang nào khác chỉ cần bấm nút, bạn dạy một lần từ menu.";
 "Open Wi-Fi Refill when you log in to your Mac" = "Mở Wi-Fi Refill khi bạn đăng nhập vào máy Mac";
 "Done" = "Xong";
+
+/* Teaching */
+"Learning this login page…" = "Đang học trang đăng nhập này…";
+"Teach Wi-Fi Refill" = "Dạy Wi-Fi Refill";
+"Log in as you usually do. Wi-Fi Refill remembers the buttons you press, and presses them for you each time this network logs you out. It stops learning if the page asks you to type." = "Hãy đăng nhập như bình thường. Wi-Fi Refill ghi nhớ những nút bạn bấm và bấm lại giúp bạn mỗi khi mạng này đăng xuất bạn. Nếu trang yêu cầu nhập thông tin, Wi-Fi Refill sẽ ngừng học.";
+"This page asks you to type, so Wi-Fi Refill won't learn it. You can still log in here." = "Trang này yêu cầu nhập thông tin nên Wi-Fi Refill sẽ không học. Bạn vẫn có thể đăng nhập ở đây.";
+"This page needs more presses than Wi-Fi Refill learns. You can still log in here." = "Trang này cần bấm nhiều hơn mức Wi-Fi Refill học được. Bạn vẫn có thể đăng nhập ở đây.";
+"This page opens another window to log in, which Wi-Fi Refill can't learn yet." = "Trang này mở một cửa sổ khác để đăng nhập, Wi-Fi Refill chưa học được kiểu này.";
+"There's no login page right now" = "Hiện không có trang đăng nhập nào";
+"Wi-Fi Refill can learn a login page while it is showing, such as the next time this network logs you out." = "Wi-Fi Refill chỉ học được trang đăng nhập khi trang đang hiện, ví dụ lần tới mạng này đăng xuất bạn.";
+"Wi-Fi Refill learned this login page" = "Wi-Fi Refill đã học trang đăng nhập này";
+"It will press the same buttons for you each time this network logs you out." = "Mỗi khi mạng này đăng xuất bạn, Wi-Fi Refill sẽ bấm đúng những nút đó giúp bạn.";
+"Wi-Fi Refill can't learn this page" = "Wi-Fi Refill không học được trang này";
+"The page asks you to type something. Wi-Fi Refill only presses buttons, so this page stays with you." = "Trang này yêu cầu bạn nhập thông tin. Wi-Fi Refill chỉ bấm nút, nên bạn tự đăng nhập trang này.";
+"Wi-Fi Refill can't learn this page yet" = "Wi-Fi Refill chưa học được trang này";
+"The page opens another window to log in. Report This Login Page… helps add support for it." = "Trang này mở một cửa sổ khác để đăng nhập. Mục Báo cáo trang đăng nhập này… giúp hỗ trợ trang này về sau.";
+"Nothing to learn" = "Không có gì để học";
+"You were logged in without pressing anything in Wi-Fi Refill's window. Try again the next time the login page appears, and log in in that window." = "Bạn đã được đăng nhập mà không bấm gì trong cửa sổ của Wi-Fi Refill. Hãy thử lại lần tới khi trang đăng nhập hiện ra, và đăng nhập ngay trong cửa sổ đó.";
+"Wi-Fi Refill can't tell one of the buttons you pressed apart from others, so it won't learn this page. You can still log in here." = "Wi-Fi Refill không phân biệt được một trong những nút bạn bấm với các nút khác, nên sẽ không học trang này. Bạn vẫn có thể đăng nhập ở đây.";
+"This page needs more presses than Wi-Fi Refill learns, so it stays with you." = "Trang này cần bấm nhiều hơn mức Wi-Fi Refill học được, nên bạn tự đăng nhập trang này.";
+"Wi-Fi Refill can't tell one of the buttons you pressed apart from the others, so this page stays with you." = "Wi-Fi Refill không phân biệt được một trong những nút bạn bấm với các nút khác, nên bạn tự đăng nhập trang này.";
+"The screen was locked. Wi-Fi Refill tries again when you unlock your Mac." = "Màn hình đang khoá. Wi-Fi Refill sẽ thử lại khi bạn mở khoá máy Mac.";

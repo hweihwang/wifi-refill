@@ -40,7 +40,7 @@ protocol Transport: Sendable {
 /// scripts.
 public final class PortalClient: Sendable {
     public static let probeURL = URL(string: "http://captive.apple.com/hotspot-detect.html")!
-    static let userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
+    public static let userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
 
     private let transport: any Transport
     private let network: LocalNetwork?

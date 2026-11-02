@@ -47,13 +47,15 @@ private struct WelcomeView: View {
                     .frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L("Wi-Fi Refill is in your menu bar")).font(.title2.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(L("Look for the cup at the top right of your screen.")).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             VStack(alignment: .leading, spacing: 12) {
                 point("cup.and.saucer", L("When cafe Wi-Fi logs you out, Wi-Fi Refill logs you back in, usually within seconds."))
                 point("hand.raised", L("It asks once per network before it logs in, and never needs a password."))
-                point("wifi", L("Works with Ruijie Cloud One-click Login pages and Awing Free Wi-Fi pages, as at Highlands Coffee. Met another kind? Report it from the menu."))
+                point("wifi", L("Knows Ruijie Cloud and Awing login pages. Teach it any other page that only needs button presses, once, from the menu."))
             }
             Toggle(L("Open Wi-Fi Refill when you log in to your Mac"), isOn: $model.openAtLogin)
             HStack {

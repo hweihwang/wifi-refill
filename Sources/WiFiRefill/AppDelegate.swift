@@ -49,6 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(action(L("Check Now"), #selector(checkNow)))
         switch watcher.status {
         case .unsupported, .failed:
+            menu.addItem(action(L("Teach Wi-Fi Refill This Login Page…"), #selector(teach)))
             menu.addItem(action(L("Open Login Page"), #selector(openLoginPage)))
             menu.addItem(action(L("Report This Login Page…"), #selector(reportLoginPage)))
         case .notNow, .turnedOff, .asking:
@@ -103,6 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .loggedIn(let network, _): String(format: L("%@: logging in again soon"), network)
         case .routerUnreachable: L("Can't reach the Wi-Fi router")
         case .failed(let reason): String(format: L("Couldn't log in: %@"), L(reason))
+        case .teaching: L("Learning this login page…")
         }
     }
 
@@ -111,7 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         var active = false
         switch watcher.status {
         case .failed, .routerUnreachable: symbol = "exclamationmark.triangle"
-        case .loggedIn, .loggingIn, .asking: symbol = "cup.and.saucer.fill"; active = true
+        case .loggedIn, .loggingIn, .asking, .teaching: symbol = "cup.and.saucer.fill"; active = true
         default: symbol = "cup.and.saucer"
         }
         item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: statusText)
@@ -123,6 +125,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: Actions
 
     @objc private func checkNow() { watcher.check(reason: "Check Now") }
+
+    @objc private func teach() {
+        Task {
+            let lesson = await watcher.teach()
+            let (title, text): (String, String)
+            switch lesson {
+            case nil:
+                (title, text) = (L("There's no login page right now"), L("Wi-Fi Refill can learn a login page while it is showing, such as the next time this network logs you out."))
+            case .learned:
+                (title, text) = (L("Wi-Fi Refill learned this login page"), L("It will press the same buttons for you each time this network logs you out."))
+            case .typed:
+                (title, text) = (L("Wi-Fi Refill can't learn this page"), L("The page asks you to type something. Wi-Fi Refill only presses buttons, so this page stays with you."))
+            case .opensWindows:
+                (title, text) = (L("Wi-Fi Refill can't learn this page yet"), L("The page opens another window to log in. Report This Login Page… helps add support for it."))
+            case .tooManyPresses:
+                (title, text) = (L("Wi-Fi Refill can't learn this page"), L("This page needs more presses than Wi-Fi Refill learns, so it stays with you."))
+            case .unclearButton:
+                (title, text) = (L("Wi-Fi Refill can't learn this page"), L("Wi-Fi Refill can't tell one of the buttons you pressed apart from the others, so this page stays with you."))
+            case .nothingPressed:
+                (title, text) = (L("Nothing to learn"), L("You were logged in without pressing anything in Wi-Fi Refill's window. Try again the next time the login page appears, and log in in that window."))
+            case .cancelled:
+                return
+            }
+            NSApp.activate()
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = text
+            alert.runModal()
+        }
+    }
 
     @objc private func togglePause() { watcher.paused.toggle() }
 

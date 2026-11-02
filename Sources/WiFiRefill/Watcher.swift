@@ -31,6 +31,7 @@ final class Watcher {
         case loggedIn(String, until: Date?)
         case routerUnreachable
         case failed(String)
+        case teaching
     }
 
     var onChange: (() -> Void)?
@@ -43,6 +44,11 @@ final class Watcher {
     private(set) var profiles: [Profile] {
         get { defaults.data(forKey: "profiles").flatMap { try? JSONDecoder().decode([Profile].self, from: $0) } ?? [] }
         set { defaults.set(try? JSONEncoder().encode(newValue), forKey: "profiles"); onChange?() }
+    }
+    /// Login pages the person taught, by page. Kept on this Mac only.
+    private var recipes: [String: Recipe] {
+        get { defaults.data(forKey: "recipes").flatMap { try? JSONDecoder().decode([String: Recipe].self, from: $0) }?.filter { $0.value.version == Recipe.currentVersion } ?? [:] }
+        set { defaults.set(try? JSONEncoder().encode(newValue), forKey: "recipes") }
     }
 
     var paused: Bool {
@@ -65,11 +71,21 @@ final class Watcher {
     private var network: LocalNetwork?
     /// The last router seen; a short gap without one (a Wi-Fi blip, sleep) keeps the session end.
     private var lastRouter: String?
+    /// The last network seen, which choices about one network (Not Now, a page that stopped working) belong to.
+    private var lastNetwork: LocalNetwork?
+    /// A network macOS has no name for, where the person allowed a taught page, and what the menu calls it: until the
+    /// connection ends.
+    private var allowedHere: (network: LocalNetwork, name: String)?
     private var sessionEnd: Date?
     /// When the Mac joined the current network.
     private var joined = Date()
     /// The login page the person answered Not Now for, until the Mac joins another network or they choose Check Now.
     private var notNowProfile: String?
+    /// The network whose taught page no longer worked, until the Mac joins another network, Check Now, or a new lesson.
+    private var stuckProfile: String?
+    /// While the person teaches a page, the lesson's web view logs in; checks wait.
+    private var teaching = false
+    private var lesson: Task<LoginBrowser.Lesson?, Never>?
     private var joinAttempt = 0
     private var generation = 0
     private var task: Task<Void, Never>?
@@ -84,11 +100,18 @@ final class Watcher {
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.check(reason: "wake") }
         }
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.check(reason: "unlock") }
+        }
     }
 
     func check(reason: String) {
-        if reason == "Check Now" { notNowProfile = nil }
+        if reason == "Check Now" {
+            notNowProfile = nil
+            stuckProfile = nil
+        }
         timer?.invalidate()
+        guard !teaching else { return }
         guard !paused else {
             status = .paused
             return
@@ -134,6 +157,7 @@ final class Watcher {
     private func restart(reason: String) {
         generation += 1
         task?.cancel()
+        lesson?.cancel()
         check(reason: reason)
     }
 
@@ -147,10 +171,18 @@ final class Watcher {
             lastRouter = current.router
             joined = Date()
             sessionEnd = nil
-            notNowProfile = nil
         }
+        if let current, current != lastNetwork {
+            lastNetwork = current
+            notNowProfile = nil
+            stuckProfile = nil
+            allowedHere = nil
+        }
+        // Permission for one connection ends with it: another cafe can look exactly the same.
+        if current == nil { allowedHere = nil }
         network = current
         let cafe = profiles.first { $0.router == current?.router && $0.allowed }
+            ?? allowedHere.flatMap { $0.network == current ? Profile(id: "page:this-connection", network: $0.name, router: $0.network.router, allowed: true) : nil }
         // Every request of this check goes out on the network it started on, or not at all.
         let client = portal.on(current)
         let result = await client.probe()
@@ -175,12 +207,13 @@ final class Watcher {
     }
 
     private func logIn(_ probe: [Hop], client: PortalClient, started: Int) async {
-        guard let (driver, entry) = Drivers.recognize(probe) else {
-            status = .unsupported("This login page isn't supported yet.")
-            return schedule(nil)
-        }
         guard let network else {
             return fail(.failed("The login page did not name the router."), code: "no-router", started: started)
+        }
+        // A page the person taught wins over a driver: they teach a page when its driver fails them.
+        let taught = recipes[Recipe.page(probe: probe, network: network)]
+        guard taught == nil, let (driver, entry) = Drivers.recognize(probe) else {
+            return await logInAsTaught(probe, recipe: taught, on: network, client: client, started: started)
         }
         do {
             var session = try await driver.prepare(from: entry, on: network, client: client)
@@ -249,6 +282,122 @@ final class Watcher {
         } catch {
             fail(.failed("The login page did not answer."), code: "network \((error as? URLError)?.code.rawValue ?? 0)", started: started)
         }
+    }
+
+    /// A page the person taught: press what they pressed, on a network they allowed.
+    private func logInAsTaught(_ probe: [Hop], recipe: Recipe?, on network: LocalNetwork, client: PortalClient, started: Int) async {
+        guard let recipe else {
+            status = .unsupported("This login page isn't supported yet.")
+            return schedule(nil)
+        }
+        let consent = Recipe.consent(on: network)
+        let session = PortalSession(profile: consent ?? "page:this-connection", network: Self.name(of: probe), router: network.router, minutes: nil, details: [:])
+        if stuckProfile == session.profile {
+            status = .failed("The login page changed. Teach Wi-Fi Refill again.")
+            return schedule(nil)
+        }
+        let known = consent.flatMap { id in profiles.first { $0.id == id } }
+        if known?.allowed == false {
+            status = .turnedOff(session.network)
+            return schedule(nil)
+        }
+        if known == nil, allowedHere?.network != network {
+            if notNowProfile == session.profile {
+                status = .notNow(session.network)
+                return schedule(nil)
+            }
+            status = .asking(session.network)
+            let allowed = await askPermission?(session) ?? false
+            guard stillApplies(started) else { return }
+            guard allowed else {
+                notNowProfile = session.profile
+                status = .notNow(session.network)
+                return schedule(nil)
+            }
+            if consent == nil { allowedHere = (network, session.network) } else { remember(session) }
+        }
+
+        status = .loggingIn(session.network)
+        let begun = Date()
+        let online = await LoginBrowser.replay(recipe, on: network, client: client)
+        guard stillApplies(started) else { return }
+        guard online else {
+            if Self.screenLocked {
+                // Not the page's fault: some pages only finish while the screen is on. Unlocking checks again.
+                status = .failed("The screen was locked. Wi-Fi Refill tries again when you unlock your Mac.")
+                Log.write("Login failed: taught page, screen locked.")
+                return schedule(nil)
+            }
+            // Pressing again every few seconds would not help a page that changed; the person decides what next.
+            stuckProfile = session.profile
+            status = .failed("The login page changed. Teach Wi-Fi Refill again.")
+            Log.write("Login failed: taught page.")
+            return schedule(nil)
+        }
+        let page = Recipe.page(probe: probe, network: network)
+        if !recipe.verified, var verified = recipes[page] {
+            verified.verified = true
+            recipes[page] = verified
+        }
+        sessionEnd = nil
+        if consent != nil { remember(session) }
+        countReconnect()
+        status = .loggedIn(session.network, until: nil)
+        Log.write("Logged in (taught page, \(recipe.steps.count) presses) in \(String(format: "%.1f", Date().timeIntervalSince(begun))) s.")
+        schedule(Schedule.next(after: .loggedIn, now: Date(), sessionEnd: nil, onCafe: true))
+    }
+
+    /// Shows the login page the network shows now, so the person logs in while Wi-Fi Refill learns their presses.
+    /// Teaching it counts as allowing Wi-Fi Refill to log in on this network. Nil when there is no login page.
+    /// Pausing, changing a network's setting or moving to another network cancels the lesson.
+    func teach() async -> LoginBrowser.Lesson? {
+        guard !teaching else { return nil }
+        teaching = true
+        generation += 1
+        task?.cancel()
+        timer?.invalidate()
+        status = .teaching
+        let started = generation
+        let running = Task { await learn(started: started) }
+        lesson = running
+        let result = await running.value
+        lesson = nil
+        teaching = false
+        restart(reason: "lesson")
+        return result
+    }
+
+    private func learn(started: Int) async -> LoginBrowser.Lesson? {
+        guard let network = Gateway.current() else { return nil }
+        let client = portal.on(network)
+        guard case .portal(let probe) = await client.probe() else { return nil }
+        guard stillApplies(started) else { return .cancelled }
+        lastProbe = probe
+        let page = Recipe.page(probe: probe, network: network)
+        let lesson = await LoginBrowser.teach(page: page, on: network, client: client)
+        // A lesson that outlived a pause, a changed setting or a move to another network teaches nothing.
+        guard stillApplies(started), Gateway.current() == network else { return .cancelled }
+        if case .learned(let recipe) = lesson {
+            recipes[page] = recipe
+            stuckProfile = nil
+            if let consent = Recipe.consent(on: network) {
+                remember(PortalSession(profile: consent, network: Self.name(of: probe), router: network.router, minutes: nil, details: [:]))
+                profiles = profiles.map { $0.id == consent ? Profile(id: $0.id, network: $0.network, router: $0.router, allowed: true) : $0 }
+            } else {
+                allowedHere = (network, Self.name(of: probe))
+            }
+            Log.write("Learned a login page (\(recipe.steps.count) presses).")
+        }
+        return lesson
+    }
+
+    private static var screenLocked: Bool {
+        (CGSessionCopyCurrentDictionary() as? [String: Any])?["CGSSessionScreenIsLocked"] as? Bool ?? false
+    }
+
+    /// What the menu calls a taught network: the login page's host.
+    private static func name(of probe: [Hop]) -> String {
+        probe.first?.location?.host ?? "Wi-Fi"
     }
 
     private func fail(_ newStatus: Status, code: String, started: Int) {

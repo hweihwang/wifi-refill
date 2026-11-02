@@ -35,6 +35,12 @@
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Login pages often use plain HTTP; only the web view that runs them may load it. -->
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+	</dict>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Hoang Pham. MIT License.</string>
 	<key>NSLocalNetworkUsageDescription</key>

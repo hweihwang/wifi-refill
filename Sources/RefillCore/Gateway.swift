@@ -8,12 +8,16 @@ public struct LocalNetwork: Sendable, Equatable {
     public var router: String
     public var address: String
     public var mask: String
+    /// macOS's name for this network: the router's address and hardware address. Tells two cafes apart even when
+    /// their routers share an address.
+    public var signature: String?
 
-    public init(interface: String, router: String, address: String, mask: String) {
+    public init(interface: String, router: String, address: String, mask: String, signature: String? = nil) {
         self.interface = interface
         self.router = router
         self.address = address
         self.mask = mask
+        self.signature = signature
     }
 
     /// Whether `host` is an IPv4 address on this network. Host names never are.
@@ -55,7 +59,7 @@ public enum Gateway {
                   let address = (ipv4["Addresses"] as? [String])?.first,
                   let mask = (ipv4["SubnetMasks"] as? [String])?.first
             else { continue }
-            return LocalNetwork(interface: interface, router: router, address: address, mask: mask)
+            return LocalNetwork(interface: interface, router: router, address: address, mask: mask, signature: ipv4["NetworkSignature"] as? String)
         }
         return nil
     }

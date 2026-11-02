@@ -25,12 +25,12 @@ then stays quiet until your Mac joins another network.
 - **Quiet.** It checks when your Mac joins a network or wakes up, when a session is due to end, and every five minutes
   on a cafe network in case the router ends it early. Other networks get the same five-minute check for three hours
   after joining, then nothing.
-- **Careful.** It only presses buttons on login pages it was tested against, and it only talks to that login page's
-  own servers and the cafe's router or Wi-Fi controller.
+- **Careful.** It only presses buttons on login pages it was tested against or that you taught it, and it never
+  types anything for you.
 
 ## Which login pages work
 
-Wi-Fi Refill supports two kinds of login page:
+Wi-Fi Refill knows two kinds of login page, and learns any other page that only needs button presses.
 
 - **Ruijie Cloud** pages with a **One-click Login** button. You will recognise them by the address
   `portal-…ruijienetworks.com` in your browser and the button at the bottom of the page. Tested on a live cafe network
@@ -39,12 +39,22 @@ Wi-Fi Refill supports two kinds of login page:
   `v1.awingconnect.vn/login`, and the page shows an advert with a connect button. These pages don't say how long a
   session lasts, so Wi-Fi Refill checks every five minutes.
 
-Other login pages are left alone. If you meet one that only needs a button press, choose **Report This Login Page…**
-in the menu. It describes how the page is built: addresses with unfamiliar names replaced, parameter and form field
-names, and no values. You can read and edit it first, and GitHub opens with it filled in. Reports are how new kinds of
-login pages get supported.
+### Teach it any other page
 
-Login pages that ask for a voucher, a room number, a phone number or a password are out of scope.
+When a login page Wi-Fi Refill doesn't know appears, choose **Teach Wi-Fi Refill This Login Page…** in the menu. The
+page opens in Wi-Fi Refill's window; log in as you usually do. Wi-Fi Refill remembers which buttons you pressed, and
+each time the network logs you out it opens the page in a window you don't see and presses them again, waiting for any
+countdown the way you did. Teaching a page allows Wi-Fi Refill to log in on that network; another network with the
+same login page, such as another store of the same chain, asks once.
+
+It learns presses only. If the page asks you to type a voucher, a phone number or anything else, it stops learning and
+leaves the page to you. Pages that open another window, ask for a password or show a CAPTCHA stay with you too. When
+the page changes, for example a new advert, Wi-Fi Refill starts over on a fresh page, up to three times, and if that
+still does not log in it asks you to teach the page again.
+
+If you meet a page Wi-Fi Refill can't learn, choose **Report This Login Page…** in the menu. It describes how the page
+is built: addresses with unfamiliar names replaced, parameter and form field names, and no values. You can read and
+edit it first, and GitHub opens with it filled in.
 
 ## Install
 
@@ -52,7 +62,7 @@ Download [Wi-Fi-Refill.dmg](https://github.com/hweihwang/wifi-refill/releases/la
 it and drag Wi-Fi Refill to Applications. It is signed and notarized by Apple. It needs macOS 14 Sonoma or later and
 runs on Apple silicon and Intel Macs.
 
-<img src="docs/welcome.png" width="460" align="right" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, and works with Ruijie Cloud One-click Login pages and Awing Free Wi-Fi pages.">
+<img src="docs/welcome.png" width="460" align="right" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, knows Ruijie Cloud and Awing login pages, and can be taught any other page that only needs button presses.">
 
 Look for the cup in your menu bar. The first time a supported login page appears, Wi-Fi Refill asks whether it may log
 in on that network, and macOS asks whether it may reach devices on your local network. Allow both: the last step of
@@ -79,16 +89,20 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 | `captive.apple.com` | When your Mac joins a network or wakes; on a cafe network when the session is due to end and every five minutes; on other networks every five minutes for three hours after joining | The same check macOS uses to notice a login page |
 | The login page's own servers | When a supported login page appears | To read the page before asking you, and to log in once you agree |
 | The cafe's router or Wi-Fi controller | After you agree, on that network | The last step of the login |
+| Whatever a taught login page loads | When that page appears on a network you allowed, and while you teach it | Running the page so Wi-Fi Refill can press its buttons |
 | `hweihwang.com` | Once a day | To look for updates |
 | `github.com` | When an update downloads | The update itself |
 | `github.com` | Only when you choose Open GitHub in a report | The report travels in the page address; it is published only if you submit the issue |
 
-The first three go over the Wi-Fi or Ethernet itself, even when a VPN is on: while a login page holds the network, a
+The first four go over the Wi-Fi or Ethernet itself, even when a VPN is on: while a login page holds the network, a
 VPN can't reach anything, and the login page only exists on the cafe's network. macOS checks for login pages the same
 way.
 
-It keeps a short log at `~/Library/Logs/WiFiRefill.log` and its settings on your Mac. It never runs a login page's
-scripts and never follows a login page to other websites.
+A login page Wi-Fi Refill knows runs without its scripts, and Wi-Fi Refill never follows it to other websites. A
+taught page runs in a private web view, as in a browser: its scripts and adverts run, and it may contact its
+advertisers. The web view keeps no cookies or history once it closes, can reach only the internet and the cafe's own
+network, has WebRTC turned off, and closes as soon as the network opens. What you taught (which buttons, on which page, never anything typed) stays on your
+Mac with the settings and a short log at `~/Library/Logs/WiFiRefill.log`.
 
 ## Questions
 
@@ -96,7 +110,8 @@ scripts and never follows a login page to other websites.
 the router sends every web request to the login page again, while your Mac still shows a working Wi-Fi connection.
 
 **How fast is it?** Wi-Fi Refill learns the session length from the login page and checks when the session is due to
-end, then every two seconds until the router ends it. If the router ends a session early, the next check comes
+end, then every two seconds until the router ends it. A taught page takes as long as the page does, adverts and
+countdowns included, usually under half a minute. If the router ends a session early, the next check comes
 within five minutes, or sooner if macOS notices the change.
 
 **What does the cup in the menu bar mean?** Filled: you are on a cafe network and logged in. Outline: nothing to do on

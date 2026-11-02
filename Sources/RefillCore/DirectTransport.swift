@@ -14,18 +14,11 @@ final class DirectTransport: Transport, @unchecked Sendable {
     static let localDeadline: TimeInterval = 30
 
     private let queue = DispatchQueue(label: "com.hweihwang.WiFiRefill.http")
-    private let monitor = NWPathMonitor()
-    private let lock = NSLock()
-    private var interfaces: [NWInterface] = []
     private let cookies: HTTPCookieStorage
 
     init() {
         cookies = URLSessionConfiguration.ephemeral.httpCookieStorage ?? HTTPCookieStorage()
         cookies.cookieAcceptPolicy = .always
-        monitor.pathUpdateHandler = { [weak self] path in
-            self?.lock.withLock { self?.interfaces = path.availableInterfaces }
-        }
-        monitor.start(queue: queue)
     }
 
     func send(_ request: URLRequest, local: Bool, network: LocalNetwork?) async throws -> (Data, HTTPURLResponse) {
@@ -35,7 +28,7 @@ final class DirectTransport: Transport, @unchecked Sendable {
               let port = UInt16(exactly: url.port ?? (scheme == "https" ? 443 : 80)).flatMap(NWEndpoint.Port.init(rawValue:))
         else { throw URLError(.unsupportedURL) }
         let parameters: NWParameters = scheme == "https" ? .tls : .tcp
-        parameters.requiredInterface = try await interface(of: network)
+        parameters.requiredInterface = try await Interfaces.shared.of(network)
         let connection = NWConnection(host: NWEndpoint.Host(host), port: port, using: parameters)
 
         var message = request
@@ -50,17 +43,6 @@ final class DirectTransport: Transport, @unchecked Sendable {
             cookies.setCookies(HTTPCookie.cookies(withResponseHeaderFields: ["Set-Cookie": setCookie], for: url), for: url, mainDocumentURL: nil)
         }
         return (Data(body.prefix(Self.bodyLimit)), response)
-    }
-
-    /// The interface of `network`, while the Mac is still on it. Network.framework lists interfaces a moment after it
-    /// starts.
-    private func interface(of network: LocalNetwork) async throws -> NWInterface {
-        for _ in 0..<20 {
-            guard Gateway.current() == network else { throw URLError(.networkConnectionLost) }
-            if let interface = lock.withLock({ interfaces.first { $0.name == network.interface } }) { return interface }
-            try await Task.sleep(for: .milliseconds(100))
-        }
-        throw URLError(.notConnectedToInternet)
     }
 
     /// Sends `message` and reads until the response is whole, the server closes, or the body passes the limit.

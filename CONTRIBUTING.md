@@ -5,7 +5,9 @@ about that.
 
 ## Adding a login page
 
-Wi-Fi Refill only presses buttons on login pages someone has tested on a real network. A driver needs three things:
+Most login pages need no code: people teach them from the menu. A driver is for a page worth logging in to without
+running its scripts, which is faster and leaks nothing to its advertisers. Wi-Fi Refill only uses drivers someone has
+tested on a real network. A driver needs three things:
 
 1. **A recording.** Connect to the network, wait until the login page appears, and record what the router and the
    login page send back, for example with `curl -v http://captive.apple.com/hotspot-detect.html` and the redirects that
