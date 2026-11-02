@@ -136,3 +136,37 @@ struct ReplayTests {
         #expect(Recipe.key(for: URL(string: "http://v1.awingconnect.vn:8080/login")!) == "http://v1.awingconnect.vn:8080/login")
     }
 }
+
+struct SharedRecipeTests {
+    @Test func sharesButtonsNeverValuesOrSessions() throws {
+        var recipe = AwingPage.recipe
+        recipe.verified = true
+        recipe.steps[0].token = 42
+        let shared = recipe.shared()
+        let decoded = try JSONDecoder().decode(Recipe.self, from: Data(shared.utf8))
+        #expect(decoded.page == "http://v1.awingconnect.vn/login", "the address without its query")
+        #expect(!decoded.verified)
+        #expect(decoded.steps.allSatisfy { $0.token == nil })
+        #expect(decoded.steps.map(\.id) == ["remind-me", "connectToInternet"])
+        #expect(!shared.contains("token"))
+    }
+
+    @Test func findsTheSharedRecipeForAPageWhateverItsQuery() {
+        let awing = [Hop(url: PortalClient.probeURL, status: 302, location: URL(string: AwingFixture.login), body: "")]
+        let elsewhere = [Hop(url: PortalClient.probeURL, status: 302, location: URL(string: "http://login.hotel.example/portal?mac=1"), body: "")]
+        #expect(Recipe.builtIn(for: awing)?.page == "http://v1.awingconnect.vn/login")
+        #expect(Recipe.builtIn(for: elsewhere) == nil)
+        #expect(Recipe.builtIn(for: [Hop(url: PortalClient.probeURL, status: 200, location: nil, body: "<html>")]) == nil)
+    }
+
+    /// The shipped Awing recipe on the page as recorded: popup, countdown, connect.
+    @Test func theShippedAwingRecipeFitsTheRecordedPage() throws {
+        let recipe = try #require(Recipe.builtIn.first { $0.page == "http://v1.awingconnect.vn/login" })
+        let start = Date(timeIntervalSince1970: 1_793_600_000)
+        var replay = Replay(recipe, now: start)
+        #expect(replay.decide(AwingPage.popup(), now: start) == .press(4))
+        replay.pressed(now: start)
+        #expect(replay.decide([AwingPage.connect("KẾT NỐI INTERNET SAU (CONNECTING IN) 3S")], now: start.addingTimeInterval(3)) == .wait)
+        #expect(replay.decide([AwingPage.connect()], now: start.addingTimeInterval(7)) == .press(0))
+    }
+}

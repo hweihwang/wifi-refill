@@ -10,6 +10,8 @@ struct Profile: Codable, Equatable {
     /// The router address last seen with this page. Only a hint for how often to check, never a reason to log in.
     var router: String
     var allowed: Bool
+    /// How long this network keeps a login, learned from its logouts when the login page does not say.
+    var session: SessionLength? = nil
 }
 
 /// Decides when to look at the network and logs in when a known login page appears.
@@ -41,6 +43,10 @@ final class Watcher {
     private(set) var status = Status.offline { didSet { if status != oldValue { onChange?() } } }
     /// The probe's answer from the last login page, for a report. Nothing else is fetched for reports.
     private(set) var lastProbe: [Hop] = []
+    /// What the person taught Wi-Fi Refill about the login page this network showed last, to share it.
+    var shareableRecipe: Recipe? {
+        network.flatMap { recipes[Recipe.page(probe: lastProbe, network: $0)] }
+    }
     private(set) var profiles: [Profile] {
         get { defaults.data(forKey: "profiles").flatMap { try? JSONDecoder().decode([Profile].self, from: $0) } ?? [] }
         set { defaults.set(try? JSONEncoder().encode(newValue), forKey: "profiles"); onChange?() }
@@ -77,6 +83,8 @@ final class Watcher {
     /// connection ends.
     private var allowedHere: (network: LocalNetwork, name: String)?
     private var sessionEnd: Date?
+    /// The login whose length is being learned: when it happened, and the last check that found it still open.
+    private var learning: (profile: String, loggedIn: Date, lastOnline: Date)?
     /// When the Mac joined the current network.
     private var joined = Date()
     /// The login page the person answered Not Now for, until the Mac joins another network or they choose Check Now.
@@ -132,7 +140,11 @@ final class Watcher {
     }
 
     func setAllowed(_ allowed: Bool, for id: String) {
-        profiles = profiles.map { $0.id == id ? Profile(id: $0.id, network: $0.network, router: $0.router, allowed: allowed) : $0 }
+        profiles = profiles.map { profile in
+            var profile = profile
+            if profile.id == id { profile.allowed = allowed }
+            return profile
+        }
         restart(reason: "network setting")
     }
 
@@ -171,6 +183,7 @@ final class Watcher {
             lastRouter = current.router
             joined = Date()
             sessionEnd = nil
+            learning = nil
         }
         if let current, current != lastNetwork {
             lastNetwork = current
@@ -193,6 +206,7 @@ final class Watcher {
         switch result {
         case .online:
             joinAttempt = 0
+            if learning?.profile == cafe?.id { learning?.lastOnline = now }
             if let end = sessionEnd, now >= end.addingTimeInterval(Schedule.endingWindow) { sessionEnd = nil }
             status = cafe.map { .loggedIn($0.network, until: sessionEnd) } ?? .noLoginPage
             schedule(Schedule.next(after: .online, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil, joined: joined))
@@ -202,6 +216,7 @@ final class Watcher {
             joinAttempt += 1
         case .portal(let hops):
             lastProbe = hops
+            learnSessionLength(loggedOut: now)
             await logIn(hops, client: client, started: started)
         }
     }
@@ -210,10 +225,11 @@ final class Watcher {
         guard let network else {
             return fail(.failed("The login page did not name the router."), code: "no-router", started: started)
         }
-        // A page the person taught wins over a driver: they teach a page when its driver fails them.
+        // A page the person taught wins over a driver: they teach a page when its driver fails them. A shared page
+        // comes after drivers.
         let taught = recipes[Recipe.page(probe: probe, network: network)]
         guard taught == nil, let (driver, entry) = Drivers.recognize(probe) else {
-            return await logInAsTaught(probe, recipe: taught, on: network, client: client, started: started)
+            return await logInAsTaught(probe, recipe: taught ?? Recipe.builtIn(for: probe), on: network, client: client, started: started)
         }
         do {
             var session = try await driver.prepare(from: entry, on: network, client: client)
@@ -261,16 +277,20 @@ final class Watcher {
             guard online else { throw LoginError.unexpected("Still not online after logging in.") }
 
             let seconds = Date().timeIntervalSince(begun)
-            sessionEnd = session.minutes.map { Date().addingTimeInterval(TimeInterval($0 * 60)) }
             remember(session)
+            loggedIn(session)
             countReconnect()
             status = .loggedIn(session.network, until: sessionEnd)
             let kind = session.profile.split(separator: ":").first.map(String.init) ?? "portal"
-            Log.write("Logged in (\(kind)) in \(String(format: "%.1f", seconds)) s. Session: \(session.minutes.map { "\($0) min" } ?? "length unknown").")
+            Log.write("Logged in (\(kind)) in \(String(format: "%.1f", seconds)) s. Session: \(Self.describe(session.minutes, learned: profiles.first { $0.id == session.profile }?.session)).")
             schedule(Schedule.next(after: .loggedIn, now: Date(), sessionEnd: sessionEnd, onCafe: true))
         } catch let error as LoginError {
             guard stillApplies(started) else { return }
             if case .unsupported(let reason) = error {
+                // The page changed beyond what its driver knows; a shared recipe presses its buttons instead.
+                if let shared = Recipe.builtIn(for: probe) {
+                    return await logInAsTaught(probe, recipe: shared, on: network, client: client, started: started)
+                }
                 status = .unsupported(reason)
                 Log.write("Login page not supported.")
                 return schedule(nil)
@@ -339,12 +359,12 @@ final class Watcher {
             verified.verified = true
             recipes[page] = verified
         }
-        sessionEnd = nil
         if consent != nil { remember(session) }
+        loggedIn(session)
         countReconnect()
-        status = .loggedIn(session.network, until: nil)
-        Log.write("Logged in (taught page, \(recipe.steps.count) presses) in \(String(format: "%.1f", Date().timeIntervalSince(begun))) s.")
-        schedule(Schedule.next(after: .loggedIn, now: Date(), sessionEnd: nil, onCafe: true))
+        status = .loggedIn(session.network, until: sessionEnd)
+        Log.write("Logged in (taught page, \(recipe.steps.count) presses) in \(String(format: "%.1f", Date().timeIntervalSince(begun))) s. Session: \(Self.describe(nil, learned: profiles.first { $0.id == session.profile }?.session)).")
+        schedule(Schedule.next(after: .loggedIn, now: Date(), sessionEnd: sessionEnd, onCafe: true))
     }
 
     /// Shows the login page the network shows now, so the person logs in while Wi-Fi Refill learns their presses.
@@ -382,7 +402,11 @@ final class Watcher {
             stuckProfile = nil
             if let consent = Recipe.consent(on: network) {
                 remember(PortalSession(profile: consent, network: Self.name(of: probe), router: network.router, minutes: nil, details: [:]))
-                profiles = profiles.map { $0.id == consent ? Profile(id: $0.id, network: $0.network, router: $0.router, allowed: true) : $0 }
+                profiles = profiles.map { profile in
+                    var profile = profile
+                    if profile.id == consent { profile.allowed = true }
+                    return profile
+                }
             } else {
                 allowedHere = (network, Self.name(of: probe))
             }
@@ -393,6 +417,34 @@ final class Watcher {
 
     private static var screenLocked: Bool {
         (CGSessionCopyCurrentDictionary() as? [String: Any])?["CGSSessionScreenIsLocked"] as? Bool ?? false
+    }
+
+    /// When the session just logged in to ends: as the login page says, or as this network's logouts showed. A page that
+    /// does not say starts or goes on learning.
+    private func loggedIn(_ session: PortalSession) {
+        let now = Date()
+        let learned = profiles.first { $0.id == session.profile }?.session
+        sessionEnd = session.minutes.map { now.addingTimeInterval(TimeInterval($0 * 60)) } ?? learned.map { now.addingTimeInterval($0.expected) }
+        let stored = profiles.contains { $0.id == session.profile }
+        learning = session.minutes == nil && stored ? (session.profile, now, now) : nil
+    }
+
+    /// The network logged the Mac out: the session ended after the last check that was online, and before now.
+    private func learnSessionLength(loggedOut now: Date) {
+        defer { learning = nil }
+        guard let learning, let length = SessionLength(loggedIn: learning.loggedIn, lastOnline: learning.lastOnline, loggedOut: now) else { return }
+        profiles = profiles.map { profile in
+            var profile = profile
+            if profile.id == learning.profile { profile.session = profile.session?.adding(length) ?? length }
+            return profile
+        }
+        Log.write("Session ended after \(Int(length.shortest / 60))-\(Int(length.longest / 60)) min.")
+    }
+
+    private static func describe(_ minutes: Int?, learned: SessionLength?) -> String {
+        if let minutes { return "\(minutes) min" }
+        if let learned { return "about \(Int(learned.expected / 60)) min, learned" }
+        return "length unknown, learning"
     }
 
     /// What the menu calls a taught network: the login page's host.

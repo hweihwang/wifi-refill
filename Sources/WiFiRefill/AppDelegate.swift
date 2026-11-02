@@ -60,6 +60,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         default:
             break
         }
+        if watcher.shareableRecipe != nil {
+            menu.addItem(action(L("Share This Login Page…"), #selector(shareLoginPage)))
+        }
         if !watcher.profiles.isEmpty {
             let networks = NSMenu()
             for profile in watcher.profiles.sorted(by: { $0.network < $1.network }) {
@@ -197,17 +200,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.orderFrontStandardAboutPanel(options: [.credits: credits])
     }
 
-    @objc private func reportLoginPage() {
+    @objc private func reportLoginPage() { report(sharing: nil) }
+
+    /// What the person taught here goes with the report, so the next version can know the page for everyone.
+    @objc private func shareLoginPage() { report(sharing: watcher.shareableRecipe) }
+
+    private func report(sharing recipe: Recipe?) {
         Task {
             let chain = watcher.lastProbe
             let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
             let system = "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)"
-            let summary = PortalReport.summary(of: chain, app: version, system: system)
+            var summary = PortalReport.summary(of: chain, app: version, system: system)
+            if let recipe {
+                summary += "\n\nThe buttons Wi-Fi Refill learned to press here:\n```json\n\(recipe.shared())\n```"
+            }
 
             NSApp.activate()
             let alert = NSAlert()
-            alert.messageText = L("Report this login page")
-            alert.informativeText = L("This is everything the report contains: how the page is built, with unfamiliar names replaced. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there.")
+            alert.messageText = recipe == nil ? L("Report this login page") : L("Share this login page")
+            alert.informativeText = recipe == nil
+                ? L("This is everything the report contains: how the page is built, with unfamiliar names replaced. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there.")
+                : L("This is everything the report contains: how the page is built, with unfamiliar names replaced, and the buttons Wi-Fi Refill learned to press here, by their names and texts. Nothing you typed is in it. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there.")
             let text = NSTextView(frame: NSRect(x: 0, y: 0, width: 460, height: 220))
             text.string = summary
             text.isEditable = true
@@ -223,7 +236,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             switch alert.runModal() {
             case .alertFirstButtonReturn:
                 // A fixed title: everything sent is in the preview the person could edit.
-                NSWorkspace.shared.open(PortalReport.issueURL(repository: Self.repository, title: "Login page report", body: text.string))
+                NSWorkspace.shared.open(PortalReport.issueURL(repository: Self.repository, title: recipe == nil ? "Login page report" : "Login page recipe", body: text.string))
             case .alertSecondButtonReturn:
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(text.string, forType: .string)

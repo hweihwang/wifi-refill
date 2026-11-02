@@ -17,8 +17,8 @@ A small Mac menu bar app that logs you back in when the cafe's Wi-Fi logs you ou
 Many cafes put their Wi-Fi behind a login page with a single "connect" button, and end the session after an hour.
 Your Mac stays on the Wi-Fi, but nothing loads until you open a page like neverssl.com and press the button again.
 
-Wi-Fi Refill presses it for you. It learns from the login page how long a session lasts, checks when it is due to
-end, and logs you back in. On a network without a login page it looks every five minutes for the first three hours,
+Wi-Fi Refill presses it for you. It learns how long a session lasts, from the login page or from the network's own
+logouts, checks when it is due to end, and logs you back in. On a network without a login page it looks every five minutes for the first three hours,
 then stays quiet until your Mac joins another network.
 
 - **No setup.** No accounts and no passwords. It asks once per network before it logs in.
@@ -37,7 +37,8 @@ Wi-Fi Refill knows two kinds of login page, and learns any other page that only 
   that logs you out every 60 minutes.
 - **Awing** Free Wi-Fi pages on Extreme Networks Wi-Fi, as at Highlands Coffee. The address starts with
   `v1.awingconnect.vn/login`, and the page shows an advert with a connect button. These pages don't say how long a
-  session lasts, so Wi-Fi Refill checks every five minutes.
+  session lasts, so Wi-Fi Refill learns it: it notes when the network logs you out, and after a session or two it
+  checks right when the next one is due to end.
 
 ### Teach it any other page
 
@@ -51,6 +52,10 @@ It learns presses only. If the page asks you to type a voucher, a phone number o
 leaves the page to you. Pages that open another window, ask for a password or show a CAPTCHA stay with you too. When
 the page changes, for example a new advert, Wi-Fi Refill starts over on a fresh page, up to three times, and if that
 still does not log in it asks you to teach the page again.
+
+To help everyone else at that cafe, choose **Share This Login Page…**. It sends what Wi-Fi Refill learned, the buttons
+by their names and texts and never anything you typed, as a GitHub issue you can read and edit first. Shared pages
+that check out on a real network ship with the next version, so Wi-Fi Refill knows them without teaching.
 
 If you meet a page Wi-Fi Refill can't learn, choose **Report This Login Page…** in the menu. It describes how the page
 is built: addresses with unfamiliar names replaced, parameter and form field names, and no values. You can read and
@@ -109,8 +114,8 @@ Mac with the settings and a short log at `~/Library/Logs/WiFiRefill.log`.
 **Why does the cafe log me out?** The cafe's router gives each login a fixed time, often an hour. When it runs out,
 the router sends every web request to the login page again, while your Mac still shows a working Wi-Fi connection.
 
-**How fast is it?** Wi-Fi Refill learns the session length from the login page and checks when the session is due to
-end, then every two seconds until the router ends it. A taught page takes as long as the page does, adverts and
+**How fast is it?** Wi-Fi Refill learns the session length from the login page, or from the network's logouts when the
+page doesn't say, and checks when the session is due to end, then every two seconds until the router ends it. A taught page takes as long as the page does, adverts and
 countdowns included, usually under half a minute. If the router ends a session early, the next check comes
 within five minutes, or sooner if macOS notices the change.
 

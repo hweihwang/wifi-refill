@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+- Logs you back in to Awing Free Wi-Fi pages on Extreme Networks Wi-Fi, as at Highlands Coffee.
+- Teach it any other login page that only needs button presses: log in once in its window, and it presses the same buttons each time the network logs you out, waiting for adverts and countdowns the way you did.
+- Share This Login Page… sends what it learned, the buttons by name and text and never anything you typed, so the next version can know the page for everyone.
+- Learns how long a session lasts from the network's logouts when the login page doesn't say, and checks right when the next one is due to end.
+- Works with a VPN that carries all traffic, such as Tailscale with an exit node: login pages are reached over the Wi-Fi itself.
+
 ## 1.0.1
 
 - Fixes a case where the internet coming back right after a login interrupted Wi-Fi Refill before it noted the login. You were logged in, but the menu did not count it, and the end of the next session could be caught up to five minutes late.

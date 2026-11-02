@@ -29,6 +29,18 @@ and when you tested it.
 
 Out of scope: login pages that need a voucher, a room number, a phone number, a password, a payment or a CAPTCHA.
 
+## Sharing a taught page
+
+A page people teach needs no code at all. Someone teaches it, chooses **Share This Login Page…**, and the issue carries
+the recipe: the page's address and each pressed button by tag, id, name, type, role, label and text. To ship it for
+everyone:
+
+1. Check it on a real network: teach the page yourself, or replay the shared recipe there.
+2. Add it to `Recipe.builtIn` in `Sources/RefillCore/BuiltInRecipes.swift`, with where and when it was checked.
+3. Add a test that replays it against the page's elements as recorded, as `SharedRecipeTests` does for Awing.
+
+Shipped recipes come after drivers, and Wi-Fi Refill asks once per network before it uses one.
+
 ## Everything else
 
 - `swift test` runs the tests. `scripts/install-dev.sh` builds the app, signs it with your Developer ID and opens it.
