@@ -61,6 +61,8 @@ final class Watcher {
         get { defaults.bool(forKey: "paused") }
         set {
             defaults.set(newValue, forKey: "paused")
+            // A login made while paused is not one Wi-Fi Refill saw: the session being learned is no longer known.
+            if newValue { learning = nil }
             restart(reason: newValue ? "pause" : "resume")
         }
     }
@@ -84,7 +86,7 @@ final class Watcher {
     private var allowedHere: (network: LocalNetwork, name: String)?
     private var sessionEnd: Date?
     /// The login whose length is being learned: when it happened, and the last check that found it still open.
-    private var learning: (profile: String, loggedIn: Date, lastOnline: Date)?
+    private var learning: (profile: String, network: LocalNetwork, loggedIn: Date, lastOnline: Date)?
     /// When the Mac joined the current network.
     private var joined = Date()
     /// The login page the person answered Not Now for, until the Mac joins another network or they choose Check Now.
@@ -185,6 +187,8 @@ final class Watcher {
             sessionEnd = nil
             learning = nil
         }
+        // A session belongs to its network: another network's login page says nothing about when it ended.
+        if learning != nil, learning?.network != current { learning = nil }
         if let current, current != lastNetwork {
             lastNetwork = current
             notNowProfile = nil
@@ -206,7 +210,7 @@ final class Watcher {
         switch result {
         case .online:
             joinAttempt = 0
-            if learning?.profile == cafe?.id { learning?.lastOnline = now }
+            if learning?.network == current { learning?.lastOnline = now }
             if let end = sessionEnd, now >= end.addingTimeInterval(Schedule.endingWindow) { sessionEnd = nil }
             status = cafe.map { .loggedIn($0.network, until: sessionEnd) } ?? .noLoginPage
             schedule(Schedule.next(after: .online, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil, joined: joined))
@@ -426,7 +430,7 @@ final class Watcher {
         let learned = profiles.first { $0.id == session.profile }?.session
         sessionEnd = session.minutes.map { now.addingTimeInterval(TimeInterval($0 * 60)) } ?? learned.map { now.addingTimeInterval($0.expected) }
         let stored = profiles.contains { $0.id == session.profile }
-        learning = session.minutes == nil && stored ? (session.profile, now, now) : nil
+        learning = session.minutes == nil && stored ? network.map { (session.profile, $0, now, now) } : nil
     }
 
     /// The network logged the Mac out: the session ended after the last check that was online, and before now.

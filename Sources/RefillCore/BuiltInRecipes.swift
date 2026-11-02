@@ -20,15 +20,43 @@ public extension Recipe {
         return builtIn.first { $0.page == page }
     }
 
-    /// What Share This Login Page… sends: the page's address without its query, and each step's element by tag, id,
-    /// name, type, role, label and text. Never a value typed, never a session.
+    /// What Share This Login Page… sends, built like the login page report: addresses with unfamiliar names replaced,
+    /// and each step's element by tag, type and role from short lists, and by id, name, label and text only where
+    /// they read like a button's caption. Never a value typed, a session, or anything that looks like an address.
     func shared() -> String {
         var copy = self
-        copy.page = String(page.prefix { $0 != "?" })
+        copy.page = URL(string: page).map(PortalReport.describe) ?? "*"
         copy.verified = false
-        copy.steps = steps.map { var step = $0; step.token = nil; return step }
+        copy.steps = steps.map { step in
+            var shared = step
+            shared.origin = URL(string: step.origin).map(PortalReport.describe) ?? "*"
+            shared.path = step.path.split(separator: "/", omittingEmptySubsequences: false).map { $0.isEmpty ? "" : PortalReport.known(String($0)) }.joined(separator: "/")
+            shared.tag = Self.sharedTags.contains(step.tag) ? step.tag : "*"
+            shared.type = step.type.map { Self.sharedTypes.contains($0) ? $0 : "*" }
+            shared.role = step.role.map { Self.sharedTypes.contains($0) ? $0 : "*" }
+            shared.id = Self.caption(step.id)
+            shared.name = Self.caption(step.name)
+            shared.label = Self.caption(step.label)
+            shared.text = Self.caption(step.text)
+            shared.token = nil
+            return shared
+        }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return String(decoding: (try? encoder.encode(copy)) ?? Data(), as: UTF8.self)
+    }
+
+    private static let sharedTags: Set = ["a", "button", "div", "img", "input", "label", "li", "span"]
+    private static let sharedTypes: Set = ["button", "checkbox", "image", "link", "radio", "reset", "submit"]
+
+    /// Kept only when it reads like a button's caption or name: letters in any script, spaces and a little punctuation,
+    /// at most two digits, at most 60 characters. Anything else could be a hardware address, an address, a phone number
+    /// or a session, and becomes *.
+    static func caption(_ text: String?) -> String? {
+        guard let text else { return nil }
+        let punctuation: Set<Character> = [" ", "-", "_", "(", ")", ".", ",", "!", "?", "&", "'", "’", ":"]
+        let plain = text.count <= 60 && text.filter(\.isNumber).count <= 2
+            && text.allSatisfy { $0.isLetter || $0.isNumber || punctuation.contains($0) }
+        return plain ? text : "*"
     }
 }

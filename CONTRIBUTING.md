@@ -32,8 +32,9 @@ Out of scope: login pages that need a voucher, a room number, a phone number, a 
 ## Sharing a taught page
 
 A page people teach needs no code at all. Someone teaches it, chooses **Share This Login Page…**, and the issue carries
-the recipe: the page's address and each pressed button by tag, id, name, type, role, label and text. To ship it for
-everyone:
+the recipe in the report's shape: the page's address with unfamiliar names replaced, and each pressed button by tag,
+type and role, and by id, name, label and text where they read like a caption. Identifiers are replaced, so the issue
+says what to look for, not everything needed to press it. To ship it for everyone:
 
 1. Check it on a real network: teach the page yourself, or replay the shared recipe there.
 2. Add it to `Recipe.builtIn` in `Sources/RefillCore/BuiltInRecipes.swift`, with where and when it was checked.

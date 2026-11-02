@@ -54,7 +54,8 @@ the page changes, for example a new advert, Wi-Fi Refill starts over on a fresh 
 still does not log in it asks you to teach the page again.
 
 To help everyone else at that cafe, choose **Share This Login Page…**. It sends what Wi-Fi Refill learned, the buttons
-by their names and texts and never anything you typed, as a GitHub issue you can read and edit first. Shared pages
+by their names and captions, with addresses and anything that looks like an identifier replaced and never anything you
+typed, as a GitHub issue you can read and edit first. Shared pages
 that check out on a real network ship with the next version, so Wi-Fi Refill knows them without teaching.
 
 If you meet a page Wi-Fi Refill can't learn, choose **Report This Login Page…** in the menu. It describes how the page

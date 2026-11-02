@@ -144,11 +144,25 @@ struct SharedRecipeTests {
         recipe.steps[0].token = 42
         let shared = recipe.shared()
         let decoded = try JSONDecoder().decode(Recipe.self, from: Data(shared.utf8))
-        #expect(decoded.page == "http://v1.awingconnect.vn/login", "the address without its query")
+        #expect(decoded.page == "http://*.awingconnect.vn/login?*&ap_mac&client_mac&*", "the address as reports show it: names, never values")
         #expect(!decoded.verified)
         #expect(decoded.steps.allSatisfy { $0.token == nil })
         #expect(decoded.steps.map(\.id) == ["remind-me", "connectToInternet"])
         #expect(!shared.contains("token"))
+    }
+
+    @Test func sharesNothingThatLooksLikeAnAddressOrAnIdentifier() throws {
+        let step = Element(origin: "https://guest.cafe-example.com", path: "/guest/1204/JaneDoe", tag: "button", id: "connect-8f3a9c21d0",
+                           name: "02:00:00:00:00:01", label: "Kết nối", text: "Connect as jane@example.com")
+        let shared = try JSONDecoder().decode(Recipe.self, from: Data(Recipe(page: "https://guest.cafe-example.com/guest/1204?mac=02:00", steps: [step]).shared().utf8))
+        let sent = try #require(shared.steps.first)
+        #expect(shared.page == "https://*.cafe-example.com/guest/*?mac")
+        #expect(sent.origin == "https://*.cafe-example.com")
+        #expect(sent.path == "/guest/*/*")
+        #expect(sent.id == "*")
+        #expect(sent.name == "*")
+        #expect(sent.label == "Kết nối", "a caption in any language stays")
+        #expect(sent.text == "*")
     }
 
     @Test func findsTheSharedRecipeForAPageWhateverItsQuery() {

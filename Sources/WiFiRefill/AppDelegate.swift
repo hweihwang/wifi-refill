@@ -220,7 +220,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             alert.messageText = recipe == nil ? L("Report this login page") : L("Share this login page")
             alert.informativeText = recipe == nil
                 ? L("This is everything the report contains: how the page is built, with unfamiliar names replaced. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there.")
-                : L("This is everything the report contains: how the page is built, with unfamiliar names replaced, and the buttons Wi-Fi Refill learned to press here, by their names and texts. Nothing you typed is in it. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there.")
+                : L("This is everything the report contains: how the page is built and the buttons Wi-Fi Refill learned to press here, with unfamiliar names and anything that looks like an address or an identifier replaced. Nothing you typed is in it. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there.")
             let text = NSTextView(frame: NSRect(x: 0, y: 0, width: 460, height: 220))
             text.string = summary
             text.isEditable = true
