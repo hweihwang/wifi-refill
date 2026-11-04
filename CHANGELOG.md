@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0
+
+- Find a Better Seat… shows your Wi-Fi's signal live while you carry your Mac around, with the best spot so far, and ticks that come faster where the signal is stronger. It reads your Mac's own Wi-Fi and sends nothing.
+- Test Speed runs macOS's own speed test over the Wi-Fi itself, past any VPN, and says whether the line is good for video calls. It asks first on a connection that counts against a data plan; the last result stays in the menu.
+
 ## 1.4.0
 
 - Cup on the Desktop, in the menu, puts a bigger cup on your desktop. Its steam is your Wi-Fi, its coffee is what's left of the cafe session, and a little kettle refills it when Wi-Fi Refill logs you back in. When something breaks it turns cold and says what. Drag it anywhere, point at it for the menu's status line, and right-click to hide it. It reads your Mac's own Wi-Fi and sends nothing.
