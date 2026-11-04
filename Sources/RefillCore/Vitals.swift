@@ -56,10 +56,14 @@ public struct Vitals: Sendable, Equatable {
 public struct Traffic: Sendable, Equatable {
     public var received: UInt32
     public var sent: UInt32
+    public var packetsIn: UInt32
+    public var packetsOut: UInt32
 
-    public init(received: UInt32, sent: UInt32) {
+    public init(received: UInt32, sent: UInt32, packetsIn: UInt32 = 0, packetsOut: UInt32 = 0) {
         self.received = received
         self.sent = sent
+        self.packetsIn = packetsIn
+        self.packetsOut = packetsOut
     }
 
     public static func read(_ interface: String) -> Traffic? {
@@ -71,9 +75,18 @@ public struct Traffic: Sendable, Equatable {
             guard item.ifa_addr?.pointee.sa_family == UInt8(AF_LINK), String(cString: item.ifa_name) == interface,
                   let data = item.ifa_data?.assumingMemoryBound(to: if_data.self).pointee
             else { continue }
-            return Traffic(received: data.ifi_ibytes, sent: data.ifi_obytes)
+            return Traffic(received: data.ifi_ibytes, sent: data.ifi_obytes, packetsIn: data.ifi_ipackets, packetsOut: data.ifi_opackets)
         }
         return nil
+    }
+
+    /// Whether the Mac kept sending while almost nothing came back, as when the internet stops behind a working
+    /// Wi-Fi: apps retry and nothing answers. Idle networks send little; working ones answer with as many packets as
+    /// they get, or at worst one for every two an upload sends.
+    public static func stalled(from old: Traffic, to new: Traffic) -> Bool {
+        let out = new.packetsOut &- old.packetsOut
+        let back = new.packetsIn &- old.packetsIn
+        return out >= 12 && back * 4 < out
     }
 
     /// Bytes per second between two readings. The counters are 32 bits and wrap; between readings seconds apart

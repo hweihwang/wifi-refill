@@ -106,3 +106,4 @@
 "The network can't look up names" = "Mạng không tra được tên miền";
 "The router's internet is down" = "Đường internet của router đang mất";
 "Your VPN isn't getting through" = "VPN của bạn không đi qua được";
+"%@: waiting for the login page…" = "%@: đang chờ trang đăng nhập…";

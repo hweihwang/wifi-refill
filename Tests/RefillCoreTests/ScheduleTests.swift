@@ -51,6 +51,13 @@ struct ScheduleTests {
     }
 
     @Test func retriesAFailedLoginSoon() {
-        #expect(Schedule.next(after: .loginFailed, now: now, sessionEnd: nil, onCafe: true) == Schedule.retry)
+        #expect(Schedule.next(after: .loginFailed, now: now, sessionEnd: nil, onCafe: true) == Schedule.retry(after: 1))
+    }
+
+    @Test func triesAgainSoonAfterAFailedLoginThenLessOften() {
+        #expect(Schedule.retry(after: 1) == 3)
+        #expect(Schedule.retry(after: 2) == 8)
+        #expect(Schedule.retry(after: 3) == 20)
+        #expect(Schedule.retry(after: 9) == 20)
     }
 }

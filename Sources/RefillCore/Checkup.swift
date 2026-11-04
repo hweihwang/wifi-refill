@@ -178,7 +178,10 @@ public enum Checkup {
     public static func throughVPN(_ url: URL = PortalClient.probeURL, under network: LocalNetwork) async -> Reading {
         let store = SCDynamicStoreCreate(nil, "WiFiRefill" as CFString, nil, nil)
         let global = SCDynamicStoreCopyValue(store, "State:/Network/Global/IPv4" as CFString) as? [String: Any]
-        guard let primary = global?["PrimaryInterface"] as? String, primary != network.interface else { return .unknown }
+        // Only a tunnel is a VPN; another Wi-Fi or Ethernet service, or an iPhone over USB, is not.
+        guard let primary = global?["PrimaryInterface"] as? String, primary != network.interface,
+              ["utun", "ipsec", "ppp", "tun", "tap"].contains(where: primary.hasPrefix)
+        else { return .unknown }
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = patient
         configuration.timeoutIntervalForResource = patient

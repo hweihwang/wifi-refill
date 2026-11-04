@@ -117,6 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .routerUnreachable: L("Can't reach the Wi-Fi router")
         case .failed(let reason): String(format: L("Couldn't log in: %@"), L(reason))
         case .teaching: L("Learning this login page…")
+        case .waitingForPage(let network): String(format: L("%@: waiting for the login page…"), network)
         }
     }
 
@@ -137,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         var active = false
         switch watcher.status {
         case .failed, .routerUnreachable: symbol = "exclamationmark.triangle"
-        case .loggedIn, .loggingIn, .asking, .teaching: symbol = "cup.and.saucer.fill"; active = true
+        case .loggedIn, .loggingIn, .asking, .teaching, .waitingForPage: symbol = "cup.and.saucer.fill"; active = true
         default: symbol = "cup.and.saucer"
         }
         if !cup.animated {

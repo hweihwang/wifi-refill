@@ -24,7 +24,7 @@ then stays quiet until your Mac joins another network.
 - **No setup.** No accounts and no passwords. It asks once per network before it logs in.
 - **Quiet.** It checks when your Mac joins a network or wakes up, when a session is due to end, and every five minutes
   on a cafe network in case the router ends it early. Other networks get the same five-minute check for three hours
-  after joining, then nothing.
+  after joining, then only when your Mac keeps sending and nothing comes back, which it sees in its own counters.
 - **Careful.** It only presses buttons on login pages it was tested against or that you taught it, and it never
   types anything for you.
 
@@ -104,7 +104,7 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 
 | To | When | Why |
 |---|---|---|
-| `captive.apple.com` | When your Mac joins a network or wakes; on a cafe network when the session is due to end and every five minutes; on other networks every five minutes for three hours after joining; once more when a check finds no internet or takes over three seconds | The same check macOS uses to notice a login page |
+| `captive.apple.com` | When your Mac joins a network or wakes; on a cafe network when the session is due to end and every five minutes; on other networks every five minutes for three hours after joining; when your Mac keeps sending and nothing comes back, at most once a minute; on a cafe network that just stopped, every two seconds for up to twenty seconds while its login page appears; once more when a check finds no internet or takes over three seconds | The same check macOS uses to notice a login page |
 | The login page's own servers | When a supported login page appears | To read the page before asking you, and to log in once you agree |
 | The cafe's router or Wi-Fi controller | After you agree, on that network | The last step of the login |
 | Your router: a ping, or the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds | To tell whether the router answers |

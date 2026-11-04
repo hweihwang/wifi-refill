@@ -81,7 +81,7 @@ final class CupController {
         if watcher.status == .paused { return .paused }
         if watcher.diagnosis?.broken == .vpn { return .broken(.vpn) }
         switch watcher.status {
-        case .loggingIn, .teaching: return .loggingIn
+        case .loggingIn, .teaching, .waitingForPage: return .loggingIn
         case .offline:
             if let leg = watcher.diagnosis?.broken { return .broken(leg) }
             // No leg to blame is not the internet working.

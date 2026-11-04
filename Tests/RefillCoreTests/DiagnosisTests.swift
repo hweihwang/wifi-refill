@@ -98,4 +98,18 @@ struct DiagnosisTests {
         #expect(rate.received == 500)
         #expect(rate.sent == 1000)
     }
+
+    @Test func noticesTheMacSendingIntoTheVoid() {
+        let before = Traffic(received: 0, sent: 0, packetsIn: 1000, packetsOut: 1000)
+        // Apps retry; only a little multicast comes back.
+        #expect(Traffic.stalled(from: before, to: Traffic(received: 0, sent: 0, packetsIn: 1002, packetsOut: 1030)))
+        // Idle: a few packets either way.
+        #expect(!Traffic.stalled(from: before, to: Traffic(received: 0, sent: 0, packetsIn: 1001, packetsOut: 1006)))
+        // An upload: one acknowledgement for every two packets sent.
+        #expect(!Traffic.stalled(from: before, to: Traffic(received: 0, sent: 0, packetsIn: 1500, packetsOut: 2000)))
+        // A download.
+        #expect(!Traffic.stalled(from: before, to: Traffic(received: 0, sent: 0, packetsIn: 3000, packetsOut: 1400)))
+        // Counters wrap.
+        #expect(Traffic.stalled(from: Traffic(received: 0, sent: 0, packetsIn: 5, packetsOut: .max - 9), to: Traffic(received: 0, sent: 0, packetsIn: 6, packetsOut: 20)))
+    }
 }

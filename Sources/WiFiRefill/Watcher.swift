@@ -34,6 +34,8 @@ final class Watcher {
         case routerUnreachable
         case failed(String)
         case teaching
+        /// On a cafe network, the internet just stopped: most likely its login page is on its way.
+        case waitingForPage(String)
     }
 
     var onChange: (() -> Void)?
@@ -94,6 +96,14 @@ final class Watcher {
     private var diagnosisBegan = Date.distantPast
     /// While a check waits for Apple's check page.
     private var probing = false
+    /// Whether the running check is on a cafe network Wi-Fi Refill logs in to.
+    private var checkOnCafe = false
+    /// On a cafe network, since when checks have found no internet.
+    private var waitingSince: Date?
+    /// Failed logins in a row, for how soon to try again.
+    private var loginFailures = 0
+    private var stallTimer: Timer?
+    private var traffic: [Traffic] = []
     /// The login whose length is being learned: when it happened, and the last check that found it still open.
     private var learning: (profile: String, network: LocalNetwork, loggedIn: Date, lastOnline: Date)?
     /// When the Mac joined the current network.
@@ -121,6 +131,28 @@ final class Watcher {
         }
         DistributedNotificationCenter.default().addObserver(forName: .init("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.check(reason: "unlock") }
+        }
+        let stallTimer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.watchForStall() }
+        }
+        stallTimer.tolerance = 1
+        RunLoop.main.add(stallTimer, forMode: .common)
+        self.stallTimer = stallTimer
+    }
+
+    /// Between checks, the internet can stop behind a working Wi-Fi, long after the last check. The Mac's own packet
+    /// counters show it without a request: apps keep sending and nothing comes back. Then a check finds out why.
+    private func watchForStall() {
+        guard let interface = network?.interface, let now = Traffic.read(interface) else { return traffic = [] }
+        traffic = Array((traffic + [now]).suffix(4))
+        guard traffic.count == 4, Traffic.stalled(from: traffic[0], to: now) else { return }
+        switch status {
+        case .noLoginPage, .loggedIn:
+            guard task == nil, Date().timeIntervalSince(lastChecked) > 60 else { return }
+            traffic = []
+            check(reason: "stall")
+        default:
+            break
         }
     }
 
@@ -200,8 +232,11 @@ final class Watcher {
         if let current, current.router != lastRouter {
             lastRouter = current.router
             joined = Date()
-            sessionEnd = nil
+            sessionEnd = savedSessionEnd(on: current)
             learning = nil
+            waitingSince = nil
+            loginFailures = 0
+            traffic = []
         }
         // A session belongs to its network: another network's login page says nothing about when it ended.
         if learning != nil, learning?.network != current { learning = nil }
@@ -219,6 +254,7 @@ final class Watcher {
         // Every request of this check goes out on the network it started on, or not at all.
         let client = portal.on(current)
         lastChecked = Date()
+        checkOnCafe = cafe != nil
         // What an earlier check began to look at no longer describes this one.
         vpnCheck?.cancel()
         // A check page that takes a while is already news: start looking at every leg after three seconds rather than
@@ -239,6 +275,8 @@ final class Watcher {
         case .online:
             diagnosing?.cancel()
             vpnCheck?.cancel()
+            waitingSince = nil
+            loginFailures = 0
             // A VPN found broken stays so until the VPN check below says otherwise, rather than flicker.
             if diagnosis?.broken != .vpn { diagnosis = nil }
             // The Wi-Fi reaches the internet; a VPN that carries all traffic may still not.
@@ -249,12 +287,23 @@ final class Watcher {
             status = cafe.map { .loggedIn($0.network, until: sessionEnd) } ?? .noLoginPage
             schedule(Schedule.next(after: .online, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil, joined: joined))
         case .offline:
+            // On a cafe network the internet stops when the session ends, and the login page can take a few seconds
+            // to appear: that's no broken network yet. Look again every two seconds for a while.
+            if let cafe {
+                let since = waitingSince ?? now
+                waitingSince = since
+                if now.timeIntervalSince(since) < Schedule.pageGrace {
+                    status = .waitingForPage(cafe.network)
+                    return schedule(Schedule.ending)
+                }
+            }
             status = .offline
             schedule(Schedule.next(after: .offline, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil, joinAttempt: joinAttempt))
             joinAttempt += 1
             // Unless the check page took long enough that the legs are already being looked at.
             if diagnosisBegan < lastChecked { diagnose(on: current, started: started) }
         case .portal(let hops):
+            waitingSince = nil
             diagnosing?.cancel()
             vpnCheck?.cancel()
             diagnosis = nil
@@ -276,9 +325,9 @@ final class Watcher {
             diagnosis = found
             // Found while the check page still hasn't answered: the network is down or held by a login page now,
             // whatever the last check said. Once the check page answers, its own result stands.
-            if probing, let leg = found.broken, leg != .vpn {
+            if probing, !checkOnCafe, let leg = found.broken, leg != .vpn {
                 switch status {
-                case .loggingIn, .teaching, .asking, .paused: break
+                case .loggingIn, .teaching, .asking, .paused, .waitingForPage: break
                 default: status = .offline
                 }
             }
@@ -502,8 +551,24 @@ final class Watcher {
         let now = Date()
         let learned = profiles.first { $0.id == session.profile }?.session
         sessionEnd = session.minutes.map { now.addingTimeInterval(TimeInterval($0 * 60)) } ?? learned.map { now.addingTimeInterval($0.expected) }
+        loginFailures = 0
+        // Kept across launches, so an update or a restart still checks right when the session ends.
+        if let network, let sessionEnd {
+            defaults.set(["router": network.router, "signature": network.signature ?? "", "end": sessionEnd.timeIntervalSince1970], forKey: "session")
+        } else {
+            defaults.removeObject(forKey: "session")
+        }
         let stored = profiles.contains { $0.id == session.profile }
         learning = session.minutes == nil && stored ? network.map { (session.profile, $0, now, now) } : nil
+    }
+
+    /// The end of the last session logged in to on `network`, unless it is long over.
+    private func savedSessionEnd(on network: LocalNetwork) -> Date? {
+        guard let saved = defaults.dictionary(forKey: "session"), saved["router"] as? String == network.router,
+              saved["signature"] as? String == network.signature ?? "", let end = (saved["end"] as? Double).map(Date.init(timeIntervalSince1970:)),
+              Date() < end.addingTimeInterval(Schedule.endingWindow)
+        else { return nil }
+        return end
     }
 
     /// The network logged the Mac out: the session ended after the last check that was online, and before now.
@@ -533,7 +598,8 @@ final class Watcher {
         guard stillApplies(started) else { return }
         status = newStatus
         Log.write("Login failed: \(code).")
-        schedule(Schedule.retry)
+        loginFailures += 1
+        schedule(Schedule.retry(after: loginFailures))
     }
 
     /// Saves the profile, keeping the person's on/off choice when it exists.
