@@ -224,6 +224,8 @@ public enum Checkup {
             }
         }
         let once = Once()
+        // The deadline must not keep a finished connection's state alive until it would have fired.
+        weak let expiring = once
         let elapsed = { Reading.ok(milliseconds: Int(Date().timeIntervalSince(start) * 1000)) }
         return await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
@@ -247,9 +249,7 @@ public enum Checkup {
                             break
                         }
                     }
-                    let deadline = DispatchWorkItem { [weak once, weak connection] in
-                        if let once, let connection { once.finish(connection, (.broken, nil)) }
-                    }
+                    let deadline = DispatchWorkItem { expiring?.finish(connection, (.broken, nil)) }
                     once.deadline = deadline
                     queue.asyncAfter(deadline: .now() + seconds, execute: deadline)
                     connection.start(queue: queue)
