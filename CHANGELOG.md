@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.0
+
+- Cup on the Desktop, in the menu, puts a bigger cup on your desktop. Its steam is your Wi-Fi, its coffee is what's left of the cafe session, and a little kettle refills it when Wi-Fi Refill logs you back in. When something breaks it turns cold and says what. Drag it anywhere, point at it for the menu's status line, and right-click to hide it. It reads your Mac's own Wi-Fi and sends nothing.
+- Right after joining a network, while the router is still handing out an address, the menu no longer says the router isn't answering.
+
 ## 1.3.0
 
 - Teach pages that ask you to type, such as a phone number, a room number or a voucher: tick Remember what I type on this page while you teach it, and Wi-Fi Refill types it again for you, with the buttons, each time the network logs you out. What you typed stays in your Keychain on this Mac, never in a shared page, a report or the log. Pressing Return in a field counts as pressing the form's button.
