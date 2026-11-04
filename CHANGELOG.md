@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1
+
+- When a cafe session ends, the menu says Wi-Fi Refill is waiting for the login page, instead of blaming the router's internet for the few seconds before the page appears.
+- Wi-Fi Refill remembers when a cafe session ends across updates and restarts, so it still logs you back in right on time.
+- After a failed login it tries again after 3 seconds, then 8, then 20, instead of waiting 20 seconds; routers often refuse for a moment right as a session ends.
+- It notices when the internet stops long after its last check, on any network: when your Mac keeps sending and nothing comes back, it checks, and the menu says what broke. It reads this from your Mac's own counters and sends nothing until then.
+- Only a tunnel counts as a VPN, so another network service on the Mac is no longer taken for one.
+
 ## 1.2.0
 
 - When the internet stops, on any network, the menu says which step broke: the Wi-Fi, the router, a login page, the network's name server, the router's internet, or your VPN. Wi-Fi Refill looks at all of them at once, over the Wi-Fi itself, and says Offline when what it sees doesn't settle it.
