@@ -36,6 +36,11 @@ final class CupController {
     private var desk: CupScene?
     private var hovering = false
     private var panelObservers: [NSObjectProtocol] = []
+    private var pathPanel: NSPanel?
+    private var path: BeanScene?
+    private var ping: Task<Void, Never>?
+    private var pathObserver: NSObjectProtocol?
+    private var routerMilliseconds: Int?
     private var sampler: Timer?
     private var last: (interface: String, traffic: Traffic, at: Date)?
     private var network: LocalNetwork?
@@ -63,11 +68,54 @@ final class CupController {
         restoreIcon?()
         if animated, let button = item.button { cup = MenuBarCup(button: button) }
         if onDesktop { showDesk() }
-        guard cup != nil || desk != nil else { return }
+        startSampling()
+    }
+
+    private func startSampling() {
+        guard sampler == nil, cup != nil || desk != nil || path != nil else { return }
         sample()
         sampler = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.sample() }
         }
+    }
+
+    /// The way from this Mac to the internet, stop by stop, with coffee beans carrying the traffic and the broken stop
+    /// marked. Pings the router every three seconds while it shows.
+    func showPath() {
+        if let pathPanel {
+            pathPanel.orderFrontRegardless()
+            return
+        }
+        let size = NSSize(width: 440, height: 187)
+        let scene = BeanScene()
+        scene.rounded = false
+        scene.frame = NSRect(origin: .zero, size: size)
+        let panel = NSPanel(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
+        panel.title = L("The Way to the Internet")
+        panel.level = .floating
+        panel.hidesOnDeactivate = false
+        panel.isReleasedWhenClosed = false
+        panel.contentView = scene
+        panel.center()
+        pathObserver = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: panel, queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                if let observer = self?.pathObserver { NotificationCenter.default.removeObserver(observer) }
+                self?.pathObserver = nil
+                self?.ping?.cancel()
+                self?.path = nil
+                self?.pathPanel = nil
+                self?.routerMilliseconds = nil
+                if self?.cup == nil, self?.desk == nil {
+                    self?.sampler?.invalidate()
+                    self?.sampler = nil
+                }
+            }
+        }
+        pathPanel = panel
+        path = scene
+        startSampling()
+        sample()
+        panel.orderFrontRegardless()
     }
 
     /// Shows a change of the watcher's status at once rather than on the next reading.
@@ -120,7 +168,7 @@ final class CupController {
     @objc private func hideDesk() { onDesktop = false }
 
     private func sample() {
-        guard cup != nil || desk != nil else { return }
+        guard cup != nil || desk != nil || path != nil else { return }
         tick += 1
         let now = Date()
         // Reading the network's services is the costly part of a reading, and it changes rarely.
@@ -146,6 +194,22 @@ final class CupController {
         }
         pulse.refilled = watcher.refilled
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        if let path {
+            if let network, tick % 3 == 1 || routerMilliseconds == nil {
+                pulse.vpn = Checkup.tunnel(over: network)
+                ping?.cancel()
+                ping = Task {
+                    let reading = await Checkup.ping(network.router, interface: network.interface, within: 1)
+                    guard !Task.isCancelled else { return }
+                    if case .ok(let ms?) = reading { self.routerMilliseconds = ms } else { self.routerMilliseconds = nil }
+                }
+            } else if let network {
+                pulse.vpn = Checkup.tunnel(over: network)
+            }
+            pulse.routerMilliseconds = routerMilliseconds
+            path.still = reduceMotion
+            path.show(pulse, text: describe?() ?? "")
+        }
         let filled = { if case .loggedIn = watcher.status { true } else { false } }()
         cup?.show(pulse, filled: filled, still: reduceMotion)
         if let desk {

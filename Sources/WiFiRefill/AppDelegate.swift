@@ -67,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(action(L("Check Now"), #selector(checkNow)))
         menu.addItem(action(L("Find a Better Seat…"), #selector(findSeat)))
+        menu.addItem(action(L("Show the Way to the Internet…"), #selector(showPath)))
         if speedTest == nil {
             menu.addItem(action(L("Test Speed"), #selector(testSpeed)))
         } else {
@@ -210,6 +211,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleAnimation() { cup.animated.toggle() }
 
     @objc private func findSeat() { seatFinder.show() }
+
+    @objc private func showPath() { cup.showPath() }
 
     /// Runs macOS's own speed test over the Wi-Fi or Ethernet itself, past any VPN, for at most twelve seconds.
     @objc private func testSpeed() {

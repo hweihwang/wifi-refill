@@ -17,7 +17,8 @@ final class SeatFinder {
             NSApp.activate()
             return
         }
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 320, height: 300), styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
+        model.rescan = { [weak self] in self?.scan() }
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 320, height: 340), styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
         panel.title = L("Find a Better Seat")
         panel.level = .floating
         // A menu bar app is not active once its menu closes; the finder stays while the person walks around.
@@ -35,6 +36,7 @@ final class SeatFinder {
             Task { @MainActor in self?.read() }
         }
         scheduleTick()
+        scan()
         NSApp.activate()
         panel.makeKeyAndOrderFront(nil)
     }
@@ -53,6 +55,20 @@ final class SeatFinder {
         if let vitals, vitals.margin > model.best?.margin ?? .min { model.best = vitals }
     }
 
+    /// Counts the networks around on this channel. A scan takes a few seconds and takes the radio off the channel for
+    /// moments, so it runs when the window opens and when asked.
+    private func scan() {
+        guard !model.scanning else { return }
+        model.scanning = true
+        Task.detached {
+            let nearby = Vitals.scan()
+            await MainActor.run {
+                self.model.scanning = false
+                self.model.nearby = nearby.map { Nearby(channel: $0.channel, gigahertz: $0.gigahertz) }
+            }
+        }
+    }
+
     private func scheduleTick() {
         let interval = model.now?.tick ?? 1.5
         ticker = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
@@ -64,11 +80,19 @@ final class SeatFinder {
         }
     }
 
+    struct Nearby: Equatable {
+        var channel: Int
+        var gigahertz: Int
+    }
+
     @MainActor
     final class Model: ObservableObject {
         @Published var now: Vitals?
         @Published var best: Vitals?
         @Published var sound = true
+        @Published var nearby: [Nearby]?
+        @Published var scanning = false
+        var rescan: () -> Void = {}
     }
 
     private struct Meter: View {
@@ -92,6 +116,17 @@ final class SeatFinder {
                     if let best = model.best {
                         Text(String(format: L("Best so far: %d dBm"), best.rssi)).font(.system(.body, design: .rounded).weight(.semibold))
                     }
+                    HStack {
+                        if let nearby = model.nearby, !model.scanning {
+                            let crowd = now.crowd(among: nearby.map { ($0.channel, $0.gigahertz) })
+                            Text(String(format: L("Channel %d, %d GHz: %d networks around share it, yours included"), now.channel, now.gigahertz, crowd))
+                                .font(.callout).fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            Text(L("Looking at the channels around…")).font(.callout).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 8)
+                        Button(L("Look Again")) { model.rescan() }.disabled(model.scanning)
+                    }
                 } else {
                     Text(L("Wi-Fi is off or not joined to a network")).font(.system(size: 20, weight: .semibold, design: .rounded))
                 }
@@ -101,7 +136,7 @@ final class SeatFinder {
                 Toggle(L("Ticks"), isOn: $model.sound)
             }
             .padding(20)
-            .frame(width: 320, height: 300)
+            .frame(width: 320, height: 340)
         }
 
         static func word(_ vitals: Vitals) -> String {

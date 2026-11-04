@@ -81,6 +81,19 @@ func outlined(_ path: CGPath, fill: NSColor? = nil, stroke: NSColor? = Palette.i
     shape(path, fill: fill, stroke: stroke, width: width, in: parent)
 }
 
+/// A one-colour image of an SF Symbol.
+func symbol(_ name: String, size: CGFloat, color: NSColor) -> CGImage? {
+    let configuration = NSImage.SymbolConfiguration(pointSize: size, weight: .semibold).applying(.init(paletteColors: [color]))
+    guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?.withSymbolConfiguration(configuration) else { return nil }
+    var rect = CGRect(origin: .zero, size: image.size)
+    let scaled = NSImage(size: NSSize(width: image.size.width * 4, height: image.size.height * 4), flipped: false) { bounds in
+        image.draw(in: bounds)
+        return true
+    }
+    rect.size = scaled.size
+    return scaled.cgImage(forProposedRect: &rect, context: nil, hints: nil)
+}
+
 enum Palette {
     static let line: CGFloat = 11
     static let ink = NSColor(srgbRed: 0.29, green: 0.16, blue: 0.09, alpha: 1)
@@ -97,3 +110,5 @@ enum Palette {
     static let sparkle = NSColor(srgbRed: 1, green: 0.8, blue: 0.35, alpha: 1)
     static let sweat = NSColor(srgbRed: 0.55, green: 0.75, blue: 0.95, alpha: 1)
 }
+
+func L(_ key: String) -> String { NSLocalizedString(key, bundle: .main, comment: "") }

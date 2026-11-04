@@ -48,6 +48,27 @@ public struct Vitals: Sendable, Equatable {
         return Vitals(rssi: rssi, noise: wifi.noiseMeasurement(), rate: wifi.transmitRate(), channel: channel.channelNumber, gigahertz: gigahertz)
     }
 
+    /// The channel and band of every network the radio hears, by a scan that takes a few seconds. Needs no Location
+    /// permission: names and addresses stay hidden, channels don't.
+    public static func scan() -> [(channel: Int, gigahertz: Int)] {
+        guard let wifi = CWWiFiClient.shared().interface(), let networks = try? wifi.scanForNetworks(withSSID: nil) else { return [] }
+        return networks.compactMap { network in
+            guard let channel = network.wlanChannel else { return nil }
+            let gigahertz = switch channel.channelBand {
+            case .band2GHz: 2
+            case .band5GHz: 5
+            case .band6GHz: 6
+            default: 0
+            }
+            return (channel.channelNumber, gigahertz)
+        }
+    }
+
+    /// How many networks share this link's channel: the same one, or on 2.4 GHz one close enough to overlap.
+    public func crowd(among nearby: [(channel: Int, gigahertz: Int)]) -> Int {
+        nearby.filter { $0.gigahertz == gigahertz && (gigahertz == 2 ? abs($0.channel - channel) <= 4 : $0.channel == channel) }.count
+    }
+
     /// The BSD name of the Wi-Fi interface, such as en0.
     public static var interface: String? { CWWiFiClient.shared().interface()?.interfaceName }
 }

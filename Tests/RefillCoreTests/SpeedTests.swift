@@ -32,4 +32,14 @@ struct SpeedTests {
         #expect(strong.tick < weak.tick)
         #expect((0.15...1.2).contains(weak.tick) && (0.15...1.2).contains(strong.tick))
     }
+
+    @Test func countsNetworksThatShareTheChannel() {
+        let nearby = [(1, 2), (3, 2), (6, 2), (11, 2), (36, 5), (124, 5), (124, 5)]
+        // On 2.4 GHz, channels up to four apart overlap.
+        #expect(Vitals(rssi: -50, noise: -90, rate: 72, channel: 1, gigahertz: 2).crowd(among: nearby) == 2)
+        #expect(Vitals(rssi: -50, noise: -90, rate: 72, channel: 6, gigahertz: 2).crowd(among: nearby) == 2)
+        // On 5 GHz, only the same channel counts.
+        #expect(Vitals(rssi: -50, noise: -90, rate: 866, channel: 124, gigahertz: 5).crowd(among: nearby) == 2)
+        #expect(Vitals(rssi: -50, noise: -90, rate: 866, channel: 149, gigahertz: 5).crowd(among: nearby) == 0)
+    }
 }

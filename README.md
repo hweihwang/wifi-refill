@@ -35,6 +35,8 @@ your Mac and the internet at once, over the Wi-Fi itself, and the menu says whic
 login page, the network's name server, the router's internet, or your VPN. It takes a few seconds. When what it sees
 doesn't settle it, the menu says Offline rather than guess. When the internet is gone, **Use Your iPhone's Hotspot…**
 opens Wi-Fi settings, where macOS lists your iPhone; macOS joins it by itself only when no Wi-Fi is around at all.
+**Show the Way to the Internet…** draws the stops between your Mac and the internet, with coffee beans carrying the
+traffic, the router's round trip, a tunnel for a VPN, and the broken stop marked when something breaks.
 **Recent Problems** in the menu lists the last ten times the internet stopped, which step broke and for how long. On a
 connection that counts against a data plan, such as an iPhone's hotspot, the menu shows how much this Mac has used
 since joining.
@@ -45,7 +47,7 @@ exclamation mark when something is broken. The steam comes from your Mac's own W
 stands still with Reduce Motion, and **Animate the Cup** in the menu turns it off.
 
 **Find a Better Seat…** shows your Wi-Fi's signal live while you carry your Mac around, with the best spot so far,
-and ticks that come faster where the signal is stronger. **Test Speed** runs macOS's own speed test over the Wi-Fi itself,
+ticks that come faster where the signal is stronger, and how many networks around share your channel. **Test Speed** runs macOS's own speed test over the Wi-Fi itself,
 past any VPN, and says whether the line is good for video calls; it asks first on a connection that counts against a
 data plan.
 
@@ -125,7 +127,7 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 | `captive.apple.com` | When your Mac joins a network or wakes; on a cafe network when the session is due to end and every five minutes; on other networks every five minutes for three hours after joining; when your Mac keeps sending and nothing comes back, at most once a minute; on a cafe network that just stopped, every two seconds for up to twenty seconds while its login page appears; once more when a check finds no internet or takes over three seconds | The same check macOS uses to notice a login page |
 | The login page's own servers | When a supported login page appears | To read the page before asking you, and to log in once you agree |
 | The cafe's router or Wi-Fi controller | After you agree, on that network | The last step of the login |
-| Your router: a ping, or the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds | To tell whether the router answers |
+| Your router: a ping, or the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds; every three seconds while the way to the internet is shown | To tell whether the router answers, and how fast |
 | Your network's own name server: one question for `captive.apple.com` | When a check finds no internet, or takes over three seconds | To tell a broken name server from a broken line |
 | `captive.apple.com` by its address: the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds | To tell whether the router's line reaches the internet |
 | `captive.apple.com` through your VPN, never following a redirect | With each check, when a VPN carries all traffic | To tell whether the VPN is the problem |

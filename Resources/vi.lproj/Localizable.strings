@@ -153,3 +153,14 @@
 "Router's internet down" = "Router mất internet";
 "VPN not getting through" = "VPN không đi qua được";
 "Metered connection: %@ used since joining" = "Kết nối tính dung lượng: đã dùng %@ từ lúc vào mạng";
+
+/* The way to the internet, channels */
+"Show the Way to the Internet…" = "Xem đường ra internet…";
+"The Way to the Internet" = "Đường ra internet";
+"Mac" = "Mac";
+"Wi-Fi" = "Wi-Fi";
+"Router" = "Router";
+"Internet" = "Internet";
+"Channel %d, %d GHz: %d networks around share it, yours included" = "Kênh %d, %d GHz: %d mạng quanh đây dùng chung kênh, tính cả mạng của bạn";
+"Looking at the channels around…" = "Đang xem các kênh quanh đây…";
+"Look Again" = "Xem lại";

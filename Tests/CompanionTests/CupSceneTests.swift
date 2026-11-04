@@ -21,3 +21,20 @@ struct CupSceneTests {
         #expect(layers.allSatisfy { $0.position.x.isFinite && $0.position.y.isFinite })
     }
 }
+
+@MainActor
+struct BeanSceneTests {
+    /// Every state, with and without Reduce Motion, keeps every layer where a number can put it.
+    @Test(arguments: [false, true])
+    func drawsEveryState(still: Bool) {
+        let scene = BeanScene()
+        scene.still = still
+        for state in MenuBarCupTests.states {
+            for bars in 0...3 {
+                scene.show(Pulse(state: state, bars: bars, received: 9_000_000, refilled: Date(), routerMilliseconds: 48, vpn: bars == 2), text: "Status")
+            }
+        }
+        let layers = [scene.root] + scene.root.sublayersDeep
+        #expect(layers.allSatisfy { $0.position.x.isFinite && $0.position.y.isFinite })
+    }
+}

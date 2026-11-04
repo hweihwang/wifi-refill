@@ -176,12 +176,7 @@ public enum Checkup {
     /// Apple's check page along the default route, when that is a VPN rather than the Wi-Fi or Ethernet. Only Apple's
     /// own page counts, and redirects are not followed: an intercepted VPN must not pass, nor send Wi-Fi Refill elsewhere.
     public static func throughVPN(_ url: URL = PortalClient.probeURL, under network: LocalNetwork) async -> Reading {
-        let store = SCDynamicStoreCreate(nil, "WiFiRefill" as CFString, nil, nil)
-        let global = SCDynamicStoreCopyValue(store, "State:/Network/Global/IPv4" as CFString) as? [String: Any]
-        // Only a tunnel is a VPN; another Wi-Fi or Ethernet service, or an iPhone over USB, is not.
-        guard let primary = global?["PrimaryInterface"] as? String, primary != network.interface,
-              ["utun", "ipsec", "ppp", "tun", "tap"].contains(where: primary.hasPrefix)
-        else { return .unknown }
+        guard tunnel(over: network) else { return .unknown }
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = patient
         configuration.timeoutIntervalForResource = patient
@@ -194,6 +189,15 @@ public enum Checkup {
               String(decoding: data.prefix(DirectTransport.bodyLimit), as: UTF8.self).contains("<TITLE>Success</TITLE>")
         else { return .broken }
         return .ok(milliseconds: Int(Date().timeIntervalSince(start) * 1000))
+    }
+
+    /// Whether a VPN carries all traffic over `network`: the primary service is a tunnel. Another Wi-Fi or Ethernet
+    /// service, or an iPhone over USB, is not one.
+    public static func tunnel(over network: LocalNetwork) -> Bool {
+        let store = SCDynamicStoreCreate(nil, "WiFiRefill" as CFString, nil, nil)
+        let global = SCDynamicStoreCopyValue(store, "State:/Network/Global/IPv4" as CFString) as? [String: Any]
+        guard let primary = global?["PrimaryInterface"] as? String, primary != network.interface else { return false }
+        return ["utun", "ipsec", "ppp", "tun", "tap"].contains(where: primary.hasPrefix)
     }
 
     private final class NoRedirects: NSObject, URLSessionTaskDelegate {

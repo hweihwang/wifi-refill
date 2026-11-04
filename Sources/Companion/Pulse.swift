@@ -26,14 +26,21 @@ public struct Pulse: Equatable, Sendable {
     public var sessionLeft: Double?
     /// When Wi-Fi Refill last logged the Mac back in.
     public var refilled: Date?
+    /// Round trip to the router, while something shows it.
+    public var routerMilliseconds: Int?
+    /// A VPN carries all traffic.
+    public var vpn = false
 
-    public init(state: State = .online, bars: Int = 3, received: Double = 0, sent: Double = 0, sessionLeft: Double? = nil, refilled: Date? = nil) {
+    public init(state: State = .online, bars: Int = 3, received: Double = 0, sent: Double = 0, sessionLeft: Double? = nil, refilled: Date? = nil,
+                routerMilliseconds: Int? = nil, vpn: Bool = false) {
         self.state = state
         self.bars = bars
         self.received = received
         self.sent = sent
         self.sessionLeft = sessionLeft
         self.refilled = refilled
+        self.routerMilliseconds = routerMilliseconds
+        self.vpn = vpn
     }
 
     /// 0 when idle, 1 around 10 MB/s and above, on a log scale: a page load shows, a download shows more.
