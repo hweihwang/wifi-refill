@@ -1,8 +1,9 @@
 import CryptoKit
 import Foundation
 
-/// The buttons a person pressed to log in on a login page, learned while they did it, so Wi-Fi Refill can press them
-/// again when the network logs them out. Only presses are learned, never anything typed.
+/// The buttons a person pressed to log in on a login page, and the fields they typed into if they chose to let Wi-Fi
+/// Refill remember, learned while they did it, so Wi-Fi Refill can do it again when the network logs them out. What
+/// they typed is never part of a recipe: it is kept in the Keychain (see `Typed`).
 public struct Recipe: Codable, Equatable, Sendable {
     public static let currentVersion = 1
 
@@ -60,11 +61,13 @@ public struct Element: Codable, Equatable, Sendable {
     public var text: String?
     /// For a checkbox or radio button: in a step, the state the person left it in; on the page, its state now.
     public var checked: Bool?
+    /// A field to type into rather than a button to press.
+    public var fill: Bool?
     /// On the page only: the page script's handle for this very element, to press exactly what was matched.
     public var token: Int?
 
     public init(origin: String, path: String, tag: String, id: String? = nil, name: String? = nil, type: String? = nil,
-                role: String? = nil, label: String? = nil, text: String? = nil, checked: Bool? = nil, token: Int? = nil) {
+                role: String? = nil, label: String? = nil, text: String? = nil, checked: Bool? = nil, fill: Bool? = nil, token: Int? = nil) {
         self.origin = origin
         self.path = path
         self.tag = tag
@@ -75,6 +78,7 @@ public struct Element: Codable, Equatable, Sendable {
         self.label = label
         self.text = text
         self.checked = checked
+        self.fill = fill
         self.token = token
     }
 
@@ -83,9 +87,9 @@ public struct Element: Codable, Equatable, Sendable {
         [id, text, label, name].contains { !($0 ?? "").isEmpty }
     }
 
-    /// A checkbox or radio button sets something the page needs; a missing button may just be a popup that did not
-    /// show this time.
-    var mayBeAbsent: Bool { checked == nil }
+    /// A checkbox, radio button or field sets something the page needs; a missing button may just be a popup that did
+    /// not show this time.
+    var mayBeAbsent: Bool { checked == nil && fill != true }
 
     enum Found: Equatable {
         case absent
@@ -103,7 +107,7 @@ public struct Element: Codable, Equatable, Sendable {
             return a.caseInsensitiveCompare(b) == .orderedSame
         }
         let scored = page.enumerated().compactMap { index, element -> (Int, Int)? in
-            guard element.origin == origin, element.tag == tag else { return nil }
+            guard element.origin == origin, element.tag == tag, (element.fill == true) == (fill == true) else { return nil }
             let identified = if let id, !id.isEmpty { same(id, element.id) }
                 else if let text, !text.isEmpty { same(text, element.text) }
                 else { same(label, element.label) || same(name, element.name) }
@@ -125,6 +129,8 @@ public struct Replay: Sendable {
         case wait
         /// Press the element at this index of what the page showed, then call `pressed` if the page confirms it.
         case press(Int)
+        /// Type the taught value of step `next` into the field at this index, then call `pressed` if the page confirms it.
+        case fill(Int)
         /// Every step is pressed; wait for the network to open.
         case finished
         /// A step did not appear in time, or stayed ambiguous: the page changed.
@@ -157,6 +163,7 @@ public struct Replay: Sendable {
         let step = steps[next]
         switch step.find(in: page) {
         case .unique(let index, let sameText):
+            if step.fill == true { return .fill(index) }
             if let wanted = step.checked, page[index].checked == wanted {
                 advance(now)
                 return decide(page, now: now)

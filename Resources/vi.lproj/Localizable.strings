@@ -107,3 +107,13 @@
 "The router's internet is down" = "Đường internet của router đang mất";
 "Your VPN isn't getting through" = "VPN của bạn không đi qua được";
 "%@: waiting for the login page…" = "%@: đang chờ trang đăng nhập…";
+
+/* Typing on taught pages, hotspot */
+"Remember what I type on this page" = "Nhớ những gì mình gõ ở trang này";
+"Log in as you usually do. Wi-Fi Refill remembers the buttons you press and does it for you each time this network logs you out. If the page asks you to type, such as a phone or room number, tick the box below and it types that for you too." = "Đăng nhập như bạn vẫn làm. Wi-Fi Refill nhớ những nút bạn bấm và làm lại giúp bạn mỗi khi mạng này đăng xuất bạn. Nếu trang yêu cầu gõ, như số điện thoại hay số phòng, hãy tick ô bên dưới để Wi-Fi Refill gõ giúp bạn luôn.";
+"This page asks you to type. Tick “Remember what I type on this page” to let Wi-Fi Refill type it for you next time." = "Trang này yêu cầu gõ. Tick “Nhớ những gì mình gõ ở trang này” để lần sau Wi-Fi Refill gõ giúp bạn.";
+"This page asks you to type somewhere Wi-Fi Refill can't fill in, so it won't learn it. You can still log in here." = "Trang này yêu cầu gõ ở chỗ Wi-Fi Refill không điền được, nên Wi-Fi Refill sẽ không học. Bạn vẫn có thể đăng nhập ở đây.";
+"Wi-Fi Refill can't tell one of the fields you typed into apart from others, so it won't learn this page. You can still log in here." = "Wi-Fi Refill không phân biệt được một ô bạn đã gõ với các ô khác, nên sẽ không học trang này. Bạn vẫn có thể đăng nhập ở đây.";
+"The page asks you to type. Teach it again and tick “Remember what I type on this page” to let Wi-Fi Refill type it for you, or log in yourself." = "Trang này yêu cầu gõ. Hãy dạy lại và tick “Nhớ những gì mình gõ ở trang này” để Wi-Fi Refill gõ giúp bạn, hoặc tự đăng nhập.";
+"It will type what you typed and press the same buttons for you each time this network logs you out. What you typed stays in your Keychain on this Mac." = "Mỗi khi mạng này đăng xuất bạn, Wi-Fi Refill sẽ gõ lại những gì bạn đã gõ và bấm đúng những nút đó. Những gì bạn gõ được giữ trong Keychain trên máy Mac này.";
+"Use Your iPhone's Hotspot…" = "Dùng hotspot của iPhone…";

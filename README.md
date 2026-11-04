@@ -25,15 +25,16 @@ then stays quiet until your Mac joins another network.
 - **Quiet.** It checks when your Mac joins a network or wakes up, when a session is due to end, and every five minutes
   on a cafe network in case the router ends it early. Other networks get the same five-minute check for three hours
   after joining, then only when your Mac keeps sending and nothing comes back, which it sees in its own counters.
-- **Careful.** It only presses buttons on login pages it was tested against or that you taught it, and it never
-  types anything for you.
+- **Careful.** It only presses buttons on login pages it was tested against or that you taught it, and it only types
+  what you taught it to, when you ticked **Remember what I type on this page**.
 
 ## On any Wi-Fi
 
 When a check finds no internet, or the check takes more than three seconds, Wi-Fi Refill looks at every step between
 your Mac and the internet at once, over the Wi-Fi itself, and the menu says which one broke: the Wi-Fi, the router, a
 login page, the network's name server, the router's internet, or your VPN. It takes a few seconds. When what it sees
-doesn't settle it, the menu says Offline rather than guess.
+doesn't settle it, the menu says Offline rather than guess. When the internet is gone, **Use Your iPhone's Hotspot…**
+opens Wi-Fi settings, where macOS lists your iPhone; macOS joins it by itself only when no Wi-Fi is around at all.
 
 The steam on the cup shows your Wi-Fi: one to three waves for the signal, rising faster while the network is busy. The
 cup is filled while Wi-Fi Refill keeps you logged in at a cafe, drips while it logs you back in, and shows an
@@ -60,10 +61,14 @@ each time the network logs you out it opens the page in a window you don't see a
 countdown the way you did. Teaching a page allows Wi-Fi Refill to log in on that network; another network with the
 same login page, such as another store of the same chain, asks once.
 
-It learns presses only. If the page asks you to type a voucher, a phone number or anything else, it stops learning and
-leaves the page to you. Pages that open another window, ask for a password or show a CAPTCHA stay with you too. When
-the page changes, for example a new advert, Wi-Fi Refill starts over on a fresh page, up to three times, and if that
-still does not log in it asks you to teach the page again.
+If the page asks you to type, such as a phone number, a room number or a voucher, tick **Remember what I type on this
+page** in the window before you log in. Wi-Fi Refill then remembers what you typed into each field and types it again
+for you, with the buttons, each time the network logs you out. What you typed stays in your Keychain on this Mac, never
+in the settings, the log, a report or a shared page. Without the tick, it doesn't learn the page and leaves it to you.
+A code that changes each time, such as one sent by text message, can't be replayed: Wi-Fi Refill asks you to teach
+the page again. Pages that open another window or show a CAPTCHA stay with you. When the page changes, for example a
+new advert, Wi-Fi Refill starts over on a fresh page, up to three times, and if that still does not log in it asks you
+to teach the page again.
 
 To help everyone else at that cafe, choose **Share This Login Page…**. It sends what Wi-Fi Refill learned, the buttons
 by their names and captions, with addresses and anything that looks like an identifier replaced and never anything you
@@ -123,8 +128,9 @@ way.
 A login page Wi-Fi Refill knows runs without its scripts, and Wi-Fi Refill never follows it to other websites. A
 taught page runs in a private web view, as in a browser: its scripts and adverts run, and it may contact its
 advertisers. The web view keeps no cookies or history once it closes, can reach only the internet and the cafe's own
-network, has WebRTC turned off, and closes as soon as the network opens. What you taught (which buttons, on which page, never anything typed) stays on your
-Mac with the settings and a short log at `~/Library/Logs/WiFiRefill.log`.
+network, has WebRTC turned off, and closes as soon as the network opens. What you taught (which buttons and fields, on which page) stays on your Mac with the settings
+and a short log at `~/Library/Logs/WiFiRefill.log`; what you typed, if you ticked Remember what I type, stays in your
+Keychain and goes only into the page you typed it into.
 
 ## Questions
 

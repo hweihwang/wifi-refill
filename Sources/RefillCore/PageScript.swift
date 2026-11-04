@@ -1,6 +1,7 @@
 /// Wi-Fi Refill's script for a login page's web view. It runs in a content world of its own in every frame: the page
-/// shares the DOM with it, never its variables. While teaching it reports each press the person makes, and any data
-/// entry, which ends the lesson; during a replay it reports what can be pressed and presses what it is told.
+/// shares the DOM with it, never its variables. While teaching it reports each press the person makes, and just before
+/// it what they typed into the page's fields; during a replay it reports what can be pressed and filled, and presses
+/// and fills what it is told.
 public enum PageScript {
     public static func source(teaching: Bool) -> String {
         #"""
@@ -28,16 +29,36 @@ public enum PageScript {
               origin: location.origin, path: location.pathname, tag: element.tagName.toLowerCase(),
               id: element.id || null, name: element.getAttribute('name'), type: type || null, role: element.getAttribute('role'),
               label: clean(element.getAttribute('aria-label')),
-              text: clean(caption) || clean(element.getAttribute('title') || element.getAttribute('alt')),
+              text: clean(caption) || clean(element.getAttribute('title') || element.getAttribute('alt') || element.getAttribute('placeholder')),
               checked: input && choiceTypes.includes(type) ? element.checked : null,
             };
           };
-          const usable = (element) => {
-            const box = element.getBoundingClientRect(), style = getComputedStyle(element);
-            return box.width > 0 && box.height > 0 && style.visibility !== 'hidden' && !element.disabled
-              && element.getAttribute('aria-disabled') !== 'true' && !holdsData(element);
+          const visible = (element) => {
+            const box = element.getBoundingClientRect();
+            return box.width > 0 && box.height > 0 && getComputedStyle(element).visibility !== 'hidden';
           };
+          const usable = (element) => visible(element) && !element.disabled && element.getAttribute('aria-disabled') !== 'true' && !holdsData(element);
+          // A field Wi-Fi Refill can fill in again: an input, text area or menu in the document itself.
+          const fillable = (node) => node instanceof Element && editable(node) && !node.isContentEditable && node.getRootNode() === document;
           if (teaching) {
+            // Fields the person typed into since their last press, in the order they first did.
+            const typed = new Set();
+            let lastPress = null, lastPressAt = 0;
+            // What they typed goes with the press that sends it, so a field corrected before pressing is taught as left.
+            const flush = () => {
+              for (const field of typed) {
+                if (field.isConnected) post({ kind: 'fill', element: { ...describe(field), fill: true }, value: field.value });
+              }
+              typed.clear();
+            };
+            const press = (element) => {
+              // A replay looks for buttons in the document, not inside components' shadow trees.
+              if (element.getRootNode() !== document) return post({ kind: 'unlearnable' });
+              flush();
+              lastPress = element;
+              lastPressAt = performance.now();
+              post({ kind: 'press', element: describe(element) });
+            };
             // Described at once, before the page's own handlers can change the element. A label passes its click on to
             // its control, which reports it; the label itself is not a step.
             document.addEventListener('click', (event) => {
@@ -47,16 +68,24 @@ public enum PageScript {
               if (path.some(editable)) return;
               const element = path.find((node) => node instanceof Element && node.matches(pressable));
               if (!element || holdsData(element)) return;
-              // A replay looks for buttons in the document, not inside components' shadow trees.
-              if (element.getRootNode() !== document) return post({ kind: 'unlearnable' });
-              post({ kind: 'press', element: describe(element) });
+              press(element);
             }, true);
-            // Any data entry ends the lesson, wherever it happens, shadow trees included: only ticking a box is a press.
+            // Return in a field sends its form without a click: that is a press of the form's button.
+            document.addEventListener('submit', (event) => {
+              if (!event.isTrusted) return;
+              const form = event.target;
+              const button = event.submitter || form.querySelector('button:not([type=button]):not([type=reset]), input[type=submit], input[type=image]');
+              if (button && button === lastPress && performance.now() - lastPressAt < 1000) return;
+              if (!button) return post({ kind: 'unlearnable' });
+              press(button);
+            }, true);
+            // Typing is noted where it happens, shadow trees included; only ticking a box is a press of its own.
             for (const type of ['beforeinput', 'input', 'paste', 'compositionstart', 'change']) {
               document.addEventListener(type, (event) => {
                 if (!event.isTrusted) return;
                 const target = event.composedPath()[0];
-                if (!(target instanceof Element && target.tagName === 'INPUT' && choiceTypes.includes(typeOf(target)))) post({ kind: 'typing' });
+                if (target instanceof Element && target.tagName === 'INPUT' && choiceTypes.includes(typeOf(target))) return;
+                if (fillable(target)) typed.add(target); else post({ kind: 'typing' });
               }, true);
             }
           } else {
@@ -76,10 +105,28 @@ public enum PageScript {
                 element.click();
                 return true;
               },
+              // Types what the person taught into exactly the field that was matched, as typing would: through the
+              // field's own setter, so pages built with frameworks notice, then the events typing sends.
+              fill: (document, token, value) => {
+                if (document !== documentID) return false;
+                const field = byToken.get(token)?.deref();
+                if (!field || !field.isConnected || !visible(field) || field.disabled || field.readOnly) return false;
+                field.scrollIntoView({ block: 'center' });
+                field.focus();
+                const prototype = field.tagName === 'SELECT' ? HTMLSelectElement.prototype : field.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+                Object.getOwnPropertyDescriptor(prototype, 'value').set.call(field, value);
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+                return field.value === value;
+              },
             };
             setInterval(() => {
               const found = [...document.querySelectorAll(pressable)].filter(usable).slice(0, 200);
-              post({ kind: 'page', document: documentID, elements: found.map((element) => ({ ...describe(element), token: tokenOf(element) })) });
+              const boxes = [...document.querySelectorAll(fields)].filter((field) => fillable(field) && visible(field) && !field.disabled).slice(0, 50);
+              post({ kind: 'page', document: documentID, elements: [
+                ...found.map((element) => ({ ...describe(element), token: tokenOf(element) })),
+                ...boxes.map((field) => ({ ...describe(field), fill: true, token: tokenOf(field) })),
+              ] });
             }, 500);
           }
         })();

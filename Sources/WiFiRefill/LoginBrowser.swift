@@ -8,8 +8,8 @@ import WebKit
 /// The page's own scripts run as in any browser, in a store that keeps nothing once it closes. Every connection goes
 /// through a WiFiRelay, out on the Wi-Fi, so a VPN cannot hide the page; WebRTC, which would not use the relay, is off.
 /// Wi-Fi Refill's script runs in a content world of its own, which the page's scripts cannot reach: it reports what can
-/// be pressed, records the person's presses while teaching, and presses for them during a replay. Nothing typed is ever
-/// recorded: any data entry ends the lesson.
+/// be pressed, records the person's presses while teaching, and presses for them during a replay. What the person types
+/// is learned only if they tick Remember What I Type, and then kept in the Keychain, never in the recipe.
 @MainActor
 final class LoginBrowser: NSObject {
     enum Lesson {
@@ -34,6 +34,9 @@ final class LoginBrowser: NSObject {
     private let webView: WKWebView
     private let window: NSWindow
     private let banner = NSTextField(wrappingLabelWithString: "")
+    private let remember = NSButton(checkboxWithTitle: L("Remember what I type on this page"), target: nil, action: nil)
+    /// What the person typed, by the step it fills; kept only if the lesson is learned and they ticked the box.
+    private var typed: [Int: String] = [:]
     /// What each document last reported it can press, by the document's own id.
     private var documents: [String: (frame: WKFrameInfo, elements: [Element], seen: Date)] = [:]
     private var presses: [Element] = []
@@ -137,9 +140,10 @@ final class LoginBrowser: NSObject {
         window.delegate = self
         if teaching {
             window.title = L("Teach Wi-Fi Refill")
-            banner.stringValue = L("Log in as you usually do. Wi-Fi Refill remembers the buttons you press, and presses them for you each time this network logs you out. It stops learning if the page asks you to type.")
+            banner.stringValue = L("Log in as you usually do. Wi-Fi Refill remembers the buttons you press and does it for you each time this network logs you out. If the page asks you to type, such as a phone or room number, tick the box below and it types that for you too.")
             banner.preferredMaxLayoutWidth = 440
-            let stack = NSStackView(views: [banner, webView])
+            remember.state = .off
+            let stack = NSStackView(views: [banner, remember, webView])
             stack.orientation = .vertical
             stack.spacing = 10
             stack.edgeInsets = NSEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
@@ -148,6 +152,7 @@ final class LoginBrowser: NSObject {
             NSLayoutConstraint.activate([
                 banner.leadingAnchor.constraint(equalTo: stack.leadingAnchor, constant: 20),
                 banner.trailingAnchor.constraint(equalTo: stack.trailingAnchor, constant: -20),
+                remember.leadingAnchor.constraint(equalTo: stack.leadingAnchor, constant: 20),
                 webView.leadingAnchor.constraint(equalTo: stack.leadingAnchor),
                 webView.trailingAnchor.constraint(equalTo: stack.trailingAnchor),
             ])
@@ -191,12 +196,15 @@ final class LoginBrowser: NSObject {
             guard !closed, !Task.isCancelled, await client.probe() == .online else { continue }
             if let unlearnable { return unlearnable }
             if presses.isEmpty { return .nothingPressed }
+            if !typed.isEmpty, remember.state != .on { return .typed }
+            Typed.save(typed, page: page)
             return .learned(Recipe(page: page, steps: presses))
         }
         return .cancelled
     }
 
     private func runReplay(_ recipe: Recipe, client: PortalClient) async -> Bool {
+        let values = recipe.steps.contains { $0.fill == true } ? Typed.load(page: recipe.page) : [:]
         var replay = Replay(recipe, now: Date())
         let deadline = Date().addingTimeInterval(Self.replayDeadline)
         var probed = Date()
@@ -218,6 +226,15 @@ final class LoginBrowser: NSObject {
                 ) as? Bool
                 guard !Task.isCancelled else { return false }
                 if pressed == true { replay.pressed(now: Date()) }
+            case .fill(let index):
+                // Nothing kept for this field, as after the Keychain item was removed: the page needs teaching again.
+                guard let value = values[replay.next] else { return false }
+                let (document, frame, element) = elements[index]
+                let filled = try? await webView.callAsyncJavaScript(
+                    "return __refill.fill(document, token, value)", arguments: ["document": document, "token": element.token ?? 0, "value": value], in: frame, contentWorld: world
+                ) as? Bool
+                guard !Task.isCancelled else { return false }
+                if filled == true { replay.pressed(now: Date()) }
             case .wait, .finished:
                 // Once the last step is pressed, starting over could submit the page twice: wait for the network.
                 break
@@ -275,10 +292,25 @@ extension LoginBrowser: WKScriptMessageHandler {
                 return refuse(.tooManyPresses, L("This page needs more presses than Wi-Fi Refill learns. You can still log in here."))
             }
             presses.append(element)
+        case "fill" where teaching && unlearnable == nil:
+            guard var element = elements(body["element"].map { [$0] })?.first, let value = body["value"] as? String else { return }
+            element.token = nil
+            guard element.identifiable else {
+                return refuse(.unclearButton, L("Wi-Fi Refill can't tell one of the fields you typed into apart from others, so it won't learn this page. You can still log in here."))
+            }
+            guard presses.count < Self.maxSteps else {
+                return refuse(.tooManyPresses, L("This page needs more presses than Wi-Fi Refill learns. You can still log in here."))
+            }
+            typed[presses.count] = String(value.prefix(256))
+            presses.append(element)
+            if remember.state != .on {
+                banner.stringValue = L("This page asks you to type. Tick “Remember what I type on this page” to let Wi-Fi Refill type it for you next time.")
+                banner.textColor = .systemOrange
+            }
         case "unlearnable" where teaching:
             refuse(.unclearButton, L("Wi-Fi Refill can't tell one of the buttons you pressed apart from others, so it won't learn this page. You can still log in here."))
         case "typing" where teaching:
-            refuse(.typed, L("This page asks you to type, so Wi-Fi Refill won't learn it. You can still log in here."))
+            refuse(.typed, L("This page asks you to type somewhere Wi-Fi Refill can't fill in, so it won't learn it. You can still log in here."))
         default:
             break
         }

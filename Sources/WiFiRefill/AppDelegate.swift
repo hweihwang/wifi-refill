@@ -64,6 +64,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .routerUnreachable:
             menu.addItem(action(L("Allow Local Network Access…"), #selector(openLocalNetworkSettings)))
             menu.addItem(action(L("Open Login Page"), #selector(openLoginPage)))
+        case .offline where watcher.diagnosis?.broken != .loginPage:
+            // macOS joins an iPhone's hotspot by itself only when no Wi-Fi is around at all; it lists it here.
+            menu.addItem(action(L("Use Your iPhone's Hotspot…"), #selector(openWiFiSettings)))
         default:
             break
         }
@@ -156,6 +159,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleAnimation() { cup.animated.toggle() }
 
+    @objc private func openWiFiSettings() {
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.wifi-settings-extension")!)
+    }
+
     @objc private func teach() {
         Task {
             let lesson = await watcher.teach()
@@ -163,10 +170,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             switch lesson {
             case nil:
                 (title, text) = (L("There's no login page right now"), L("Wi-Fi Refill can learn a login page while it is showing, such as the next time this network logs you out."))
+            case .learned(let recipe) where recipe.steps.contains { $0.fill == true }:
+                (title, text) = (L("Wi-Fi Refill learned this login page"), L("It will type what you typed and press the same buttons for you each time this network logs you out. What you typed stays in your Keychain on this Mac."))
             case .learned:
                 (title, text) = (L("Wi-Fi Refill learned this login page"), L("It will press the same buttons for you each time this network logs you out."))
             case .typed:
-                (title, text) = (L("Wi-Fi Refill can't learn this page"), L("The page asks you to type something. Wi-Fi Refill only presses buttons, so this page stays with you."))
+                (title, text) = (L("Wi-Fi Refill can't learn this page"), L("The page asks you to type. Teach it again and tick “Remember what I type on this page” to let Wi-Fi Refill type it for you, or log in yourself."))
             case .opensWindows:
                 (title, text) = (L("Wi-Fi Refill can't learn this page yet"), L("The page opens another window to log in. Report This Login Page… helps add support for it."))
             case .tooManyPresses:

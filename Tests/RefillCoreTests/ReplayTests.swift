@@ -135,6 +135,31 @@ struct ReplayTests {
         #expect(Recipe.key(for: URL(string: "https://v1.awingconnect.vn/login?Qv=1")!) != Recipe.key(for: URL(string: "http://v1.awingconnect.vn/login?Qv=1")!))
         #expect(Recipe.key(for: URL(string: "http://v1.awingconnect.vn:8080/login")!) == "http://v1.awingconnect.vn:8080/login")
     }
+
+    static func field(_ name: String, token: Int? = nil) -> Element {
+        Element(origin: "http://portal.example", path: "/login", tag: "input", name: name, type: "tel", text: "Phone number", fill: true, token: token)
+    }
+
+    @Test func typesIntoATaughtFieldThenPresses() {
+        let go = Element(origin: "http://portal.example", path: "/login", tag: "button", text: "Connect")
+        var replay = Replay(Recipe(page: "p", steps: [Self.field("phone"), go]), now: start)
+        let page = [go, Self.field("phone")]
+        #expect(step(&replay, page, 0) == .fill(1))
+        replay.pressed(now: at(0.5))
+        #expect(step(&replay, page, 1) == .press(0))
+    }
+
+    @Test func neverSkipsAField() {
+        let go = Element(origin: "http://portal.example", path: "/login", tag: "button", text: "Connect")
+        var replay = Replay(Recipe(page: "p", steps: [Self.field("phone"), go]), now: start)
+        #expect(step(&replay, [go], 0) == .wait, "the button is there, but the field it needs is not")
+    }
+
+    @Test func tellsAFieldFromAButtonWithTheSameName() {
+        let button = Element(origin: "http://portal.example", path: "/login", tag: "input", name: "phone", type: "submit", text: "Phone number")
+        var replay = Replay(Recipe(page: "p", steps: [Self.field("phone")]), now: start)
+        #expect(step(&replay, [button], 0) == .wait)
+    }
 }
 
 struct SharedRecipeTests {
