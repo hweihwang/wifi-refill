@@ -68,7 +68,7 @@
 "Look for the cup at the top right of your screen." = "Tìm biểu tượng tách cà phê ở góc trên bên phải màn hình.";
 "When cafe Wi-Fi logs you out, Wi-Fi Refill logs you back in, usually within seconds." = "Khi Wi-Fi quán cà phê đăng xuất bạn, Wi-Fi Refill đăng nhập lại, thường chỉ trong vài giây.";
 "It asks once per network before it logs in, and never needs a password." = "Ứng dụng hỏi bạn một lần cho mỗi mạng trước khi đăng nhập, và không bao giờ cần mật khẩu.";
-"Knows Ruijie Cloud and Awing login pages. Teach it any other page that only needs button presses, once, from the menu." = "Biết sẵn trang đăng nhập của Ruijie Cloud và Awing. Trang nào khác chỉ cần bấm nút, bạn dạy một lần từ menu.";
+"Knows Ruijie Cloud, Awing and MikroTik login pages. Teach it any other page that only needs button presses, once, from the menu." = "Biết sẵn trang đăng nhập của Ruijie Cloud, Awing và MikroTik. Trang nào khác chỉ cần bấm nút, bạn dạy một lần từ menu.";
 "Open Wi-Fi Refill when you log in to your Mac" = "Mở Wi-Fi Refill khi bạn đăng nhập vào máy Mac";
 "Done" = "Xong";
 
@@ -164,3 +164,13 @@
 "Channel %d, %d GHz: %d networks around share it, yours included" = "Kênh %d, %d GHz: %d mạng quanh đây dùng chung kênh, tính cả mạng của bạn";
 "Looking at the channels around…" = "Đang xem các kênh quanh đây…";
 "Look Again" = "Xem lại";
+"Use the Hotspot on %@ (%d%% battery)" = "Dùng hotspot của %@ (pin %d%%)";
+"Use the Hotspot on %@" = "Dùng hotspot của %@";
+"Turning on the hotspot on %@…" = "Đang bật hotspot của %@…";
+"Back to Wi-Fi" = "Quay lại Wi-Fi";
+"Switch to Your iPhone When Wi-Fi Breaks" = "Chuyển sang iPhone khi Wi-Fi hỏng";
+"Couldn't switch to your iPhone" = "Không chuyển sang iPhone được";
+"Your Mac couldn't join its network." = "Mac không vào được mạng của iPhone.";
+"Your iPhone couldn't turn its hotspot on." = "iPhone không bật được hotspot.";
+"Your iPhone didn't answer." = "iPhone không trả lời.";
+"This login page asks for a user name and password." = "Trang đăng nhập này yêu cầu tên người dùng và mật khẩu.";

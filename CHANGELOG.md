@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0
+
+- When the Wi-Fi's internet is gone, the menu lists your iPhones nearby with their battery: Use the Hotspot on … turns its Personal Hotspot on over Bluetooth and joins it in a few seconds, and Back to Wi-Fi leaves it. Switch to Your iPhone When Wi-Fi Breaks does it by itself after 20 seconds of broken Wi-Fi, never for a login page or a VPN.
+- Right after your Mac changes networks, the menu no longer says your VPN isn't getting through while the VPN reconnects: it checks twice more, ten seconds apart, before it says so.
+- MikroTik HotSpot login pages with a free trial: Wi-Fi Refill opens the trial for you, after asking once per network. Checked against RouterOS 7.25.1 in a virtual machine.
+
 ## 1.7.0
 
 - Show the Way to the Internet… draws the stops between your Mac and the internet: coffee beans carry the traffic, faster with a quicker router, a tunnel shows a VPN, and when something breaks the beans pile up at the stop that doesn't answer.

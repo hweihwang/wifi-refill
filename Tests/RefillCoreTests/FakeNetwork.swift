@@ -1,7 +1,8 @@
 import Foundation
 @testable import RefillCore
 
-/// Answers PortalClient's requests from recorded responses, keyed by host and path, and remembers every request.
+/// Answers PortalClient's requests from recorded responses, keyed by host and path, or by host, path and query when
+/// one path answers differently, and remembers every request.
 final class FakeNetwork: Transport {
     struct Response {
         var status = 200
@@ -38,7 +39,8 @@ final class FakeNetwork: Transport {
         let url = request.url!
         let route = Self.lock.withLock {
             Self.log.append((url, request.httpBody))
-            return Self.routes[(url.host ?? "") + url.path(percentEncoded: true)]
+            let key = (url.host ?? "") + url.path(percentEncoded: true)
+            return url.query(percentEncoded: true).flatMap { Self.routes[key + "?" + $0] } ?? Self.routes[key]
         }
         guard let route else { throw URLError(.cannotConnectToHost) }
         var headers = ["Content-Type": "text/html"]

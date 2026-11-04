@@ -33,8 +33,13 @@ then stays quiet until your Mac joins another network.
 When a check finds no internet, or the check takes more than three seconds, Wi-Fi Refill looks at every step between
 your Mac and the internet at once, over the Wi-Fi itself, and the menu says which one broke: the Wi-Fi, the router, a
 login page, the network's name server, the router's internet, or your VPN. It takes a few seconds. When what it sees
-doesn't settle it, the menu says Offline rather than guess. When the internet is gone, **Use Your iPhone's Hotspot…**
-opens Wi-Fi settings, where macOS lists your iPhone; macOS joins it by itself only when no Wi-Fi is around at all.
+doesn't settle it, the menu says Offline rather than guess. When the Wi-Fi's internet is gone, the menu lists your
+iPhones nearby: **Use the Hotspot on …** turns that iPhone's Personal Hotspot on over Bluetooth and joins it in a few
+seconds, and **Back to Wi-Fi** leaves it again. Turn on **Switch to Your iPhone When Wi-Fi Breaks** to have it switch by
+itself once the Wi-Fi has been broken for 20 seconds; it never does for a login page or a VPN, and waits ten minutes
+before it switches by itself again, since macOS may move back to a Wi-Fi it ranks higher. This uses the same
+macOS service as the Wi-Fi menu, which Apple doesn't offer to apps, so a future macOS may take it away; when no iPhone
+shows up, **Use Your iPhone's Hotspot…** opens Wi-Fi settings instead.
 **Show the Way to the Internet…** draws the stops between your Mac and the internet, with coffee beans carrying the
 traffic, the router's round trip, a tunnel for a VPN, and the broken stop marked when something breaks.
 **Recent Problems** in the menu lists the last ten times the internet stopped, which step broke and for how long. On a
@@ -58,7 +63,7 @@ hide it.
 
 ## Which login pages work
 
-Wi-Fi Refill knows two kinds of login page, and learns any other page that only needs button presses.
+Wi-Fi Refill knows three kinds of login page, and learns any other page that only needs button presses.
 
 - **Ruijie Cloud** pages with a **One-click Login** button. You will recognise them by the address
   `portal-…ruijienetworks.com` in your browser and the button at the bottom of the page. Tested on a live cafe network
@@ -67,6 +72,10 @@ Wi-Fi Refill knows two kinds of login page, and learns any other page that only 
   `v1.awingconnect.vn/login`, and the page shows an advert with a connect button. These pages don't say how long a
   session lasts, so Wi-Fi Refill learns it: it notes when the network logs you out, and after a session or two it
   checks right when the next one is due to end.
+- **MikroTik HotSpot** pages with a free trial ("Free trial available, click here"), served by the router itself at an
+  address such as `10.5.50.1/login`. Wi-Fi Refill opens the trial link for you. Pages that only take a user name and
+  password are for teaching. Checked against MikroTik's RouterOS 7.25.1 in a virtual machine, not yet on a cafe's
+  network.
 
 ### Teach it any other page
 
@@ -100,7 +109,7 @@ Download [Wi-Fi-Refill.dmg](https://github.com/hweihwang/wifi-refill/releases/la
 it and drag Wi-Fi Refill to Applications. It is signed and notarized by Apple. It needs macOS 14 Sonoma or later and
 runs on Apple silicon and Intel Macs.
 
-<img src="docs/welcome.png" width="460" align="right" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, knows Ruijie Cloud and Awing login pages, and can be taught any other page that only needs button presses.">
+<img src="docs/welcome.png" width="460" align="right" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, knows Ruijie Cloud, Awing and MikroTik login pages, and can be taught any other page that only needs button presses.">
 
 Look for the cup in your menu bar. The first time a supported login page appears, Wi-Fi Refill asks whether it may log
 in on that network, and macOS asks whether it may reach devices on your local network. Allow both: the last step of
@@ -129,8 +138,10 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 | The cafe's router or Wi-Fi controller | After you agree, on that network | The last step of the login |
 | Your router: a ping, or the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds; every three seconds while the way to the internet is shown | To tell whether the router answers, and how fast |
 | Your network's own name server: one question for `captive.apple.com` | When a check finds no internet, or takes over three seconds | To tell a broken name server from a broken line |
+| Your network's own name server: one question for a MikroTik login page's name | When such a page appears under a name rather than an address | To make sure the page is on your own network before anything goes to it |
+| Your iPhone, through macOS over Bluetooth | When you choose Use the Hotspot on…, or when the Wi-Fi stays broken for 20 seconds and you turned on Switch to Your iPhone When Wi-Fi Breaks | To turn its Personal Hotspot on and get its network's name and password, which go only into joining it |
 | `captive.apple.com` by its address: the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds | To tell whether the router's line reaches the internet |
-| `captive.apple.com` through your VPN, never following a redirect | With each check, when a VPN carries all traffic | To tell whether the VPN is the problem |
+| `captive.apple.com` through your VPN, never following a redirect | With each check, when a VPN carries all traffic, and twice more, ten seconds apart, when it doesn't get through | To tell whether the VPN is the problem |
 | Apple's speed test servers, through macOS's own `networkQuality` | Only when you choose Test Speed | To measure the line's speed; on a fast line it moves a few hundred megabytes |
 | Whatever a taught login page loads | When that page appears on a network you allowed, and while you teach it | Running the page so Wi-Fi Refill can press its buttons |
 | `hweihwang.com` | Once a day | To look for updates |
@@ -181,7 +192,7 @@ swift run refill-doctor    # looks at every step to the internet on this network
 ## License
 
 MIT, see [LICENSE](LICENSE). Wi-Fi Refill uses [Sparkle](https://sparkle-project.org) for updates, also under the MIT
-license. It is not affiliated with Ruijie Networks, Awing, Extreme Networks or Highlands Coffee.
+license. It is not affiliated with Ruijie Networks, Awing, Extreme Networks, MikroTik or Highlands Coffee.
 
 Made by [Hoang](https://hweihwang.com/). Found a bug? [Open an issue](https://github.com/hweihwang/wifi-refill/issues).
 Security problems go to [SECURITY.md](SECURITY.md).

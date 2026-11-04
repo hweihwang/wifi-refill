@@ -55,7 +55,7 @@ private struct WelcomeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 point("cup.and.saucer", L("When cafe Wi-Fi logs you out, Wi-Fi Refill logs you back in, usually within seconds."))
                 point("hand.raised", L("It asks once per network before it logs in, and never needs a password."))
-                point("wifi", L("Knows Ruijie Cloud and Awing login pages. Teach it any other page that only needs button presses, once, from the menu."))
+                point("wifi", L("Knows Ruijie Cloud, Awing and MikroTik login pages. Teach it any other page that only needs button presses, once, from the menu."))
             }
             Toggle(L("Open Wi-Fi Refill when you log in to your Mac"), isOn: $model.openAtLogin)
             HStack {

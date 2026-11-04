@@ -11,7 +11,8 @@ tested on a real network. A driver needs three things:
 
 1. **A recording.** Connect to the network, wait until the login page appears, and record what the router and the
    login page send back, for example with `curl -v http://captive.apple.com/hotspot-detect.html` and the redirects that
-   follow. **Report This Login Page…** in the menu gives a safe summary to start an issue with. Before you commit a
+   follow. When the vendor's own firmware runs in a virtual machine, as MikroTik's RouterOS does, a recording from it
+   counts too; say so in the driver and the README until someone checks it on a real network. **Report This Login Page…** in the menu gives a safe summary to start an issue with. Before you commit a
    recording, replace every value that identifies a person, a device or a network: hardware addresses, public IP
    addresses, router serial numbers, tokens, signatures and session ids. Keep the shape of each value.
 2. **A driver** in `Sources/RefillCore`, conforming to `PortalDriver`:

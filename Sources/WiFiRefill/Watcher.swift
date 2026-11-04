@@ -364,7 +364,13 @@ final class Watcher {
 
     private func checkVPN(under network: LocalNetwork, started: Int) {
         vpnCheck = Task {
-            let reading = await Checkup.throughVPN(under: network)
+            // A VPN reconnects for a while after the Mac changes networks: only one that stays broken counts.
+            var reading = await Checkup.throughVPN(under: network)
+            for _ in 0..<2 where reading == .broken {
+                try? await Task.sleep(for: .seconds(10))
+                guard !Task.isCancelled else { return }
+                reading = await Checkup.throughVPN(under: network)
+            }
             guard !Task.isCancelled, stillApplies(started) else { return }
             let found = reading == .broken ? Diagnosis(observations: Observations(probe: .online, vpn: .broken), milliseconds: 0) : nil
             guard found?.broken != diagnosis?.broken else { return }

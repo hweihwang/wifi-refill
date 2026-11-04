@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     private var welcome: WelcomeWindow?
     private let seatFinder = SeatFinder()
+    private let hotspot = Hotspot()
     private var speedTest: Process?
     private var lastSpeed: (speed: Speed, at: Date)?
     private lazy var cup = CupController(watcher: watcher, item: item)
@@ -31,6 +32,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         watcher.onChange = { [weak self] in
             self?.updateIcon()
             self?.cup.statusChanged()
+            self?.updateHotspot()
+        }
+        hotspot.onFailure = { message in
+            NSApp.activate()
+            let alert = NSAlert()
+            alert.messageText = L("Couldn't switch to your iPhone")
+            alert.informativeText = message
+            alert.runModal()
         }
         watcher.askPermission = { [weak self] session in self?.askToLogIn(session) ?? false }
         updateIcon()
@@ -83,11 +92,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .routerUnreachable:
             menu.addItem(action(L("Allow Local Network Access…"), #selector(openLocalNetworkSettings)))
             menu.addItem(action(L("Open Login Page"), #selector(openLoginPage)))
-        case .offline where watcher.diagnosis?.broken != .loginPage:
-            // macOS joins an iPhone's hotspot by itself only when no Wi-Fi is around at all; it lists it here.
-            menu.addItem(action(L("Use Your iPhone's Hotspot…"), #selector(openWiFiSettings)))
+        case .offline where watcher.diagnosis?.broken != .loginPage && hotspot.joining == nil:
+            // macOS joins an iPhone's hotspot by itself only when no Wi-Fi is around at all.
+            for phone in hotspot.phones {
+                let title = phone.battery.map { String(format: L("Use the Hotspot on %@ (%d%% battery)"), phone.name, $0) }
+                    ?? String(format: L("Use the Hotspot on %@"), phone.name)
+                menu.addItem(action(title, #selector(useHotspot(_:)), value: phone.name))
+            }
+            if hotspot.phones.isEmpty {
+                menu.addItem(action(L("Use Your iPhone's Hotspot…"), #selector(openWiFiSettings)))
+            }
         default:
             break
+        }
+        if let phone = hotspot.joining {
+            menu.addItem(info(String(format: L("Turning on the hotspot on %@…"), phone)))
+        } else if hotspot.joined, watcher.expensive {
+            menu.addItem(action(L("Back to Wi-Fi"), #selector(backToWiFi)))
         }
         if watcher.shareableRecipe != nil {
             menu.addItem(action(L("Share This Login Page…"), #selector(shareLoginPage)))
@@ -118,6 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             entry.submenu = networks
             menu.addItem(entry)
         }
+        menu.addItem(action(L("Switch to Your iPhone When Wi-Fi Breaks"), #selector(toggleAutomaticHotspot), on: hotspot.automatic))
         menu.addItem(action(L("Animate the Cup"), #selector(toggleAnimation), on: cup.animated))
         menu.addItem(action(L("Cup on the Desktop"), #selector(toggleDesktopCup), on: cup.onDesktop))
         menu.addItem(.separator())
@@ -262,6 +284,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func toggleDesktopCup() { cup.onDesktop.toggle() }
+
+    /// Looks for the person's iPhones while the Wi-Fi itself is what's broken: a login page or a VPN is no reason.
+    private func updateHotspot() {
+        let leg = watcher.diagnosis?.broken
+        hotspot.wifi(broken: watcher.status == .offline && leg != .loginPage && leg != .vpn, metered: watcher.expensive)
+    }
+
+    @objc private func useHotspot(_ sender: NSMenuItem) {
+        guard let name = sender.representedObject as? String else { return }
+        hotspot.join(name)
+    }
+
+    @objc private func backToWiFi() {
+        hotspot.backToWiFi()
+    }
+
+    @objc private func toggleAutomaticHotspot() {
+        hotspot.automatic.toggle()
+    }
 
     @objc private func openWiFiSettings() {
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.wifi-settings-extension")!)
