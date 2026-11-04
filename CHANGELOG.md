@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0
+
+- Show the Way to the Internet… draws the stops between your Mac and the internet: coffee beans carry the traffic, faster with a quicker router, a tunnel shows a VPN, and when something breaks the beans pile up at the stop that doesn't answer.
+- Find a Better Seat… also says how many networks around share your Wi-Fi's channel; on 2.4 GHz it counts the channels close enough to overlap.
+
 ## 1.6.0
 
 - Recent Problems in the menu lists the last ten times the internet stopped, which step broke and for how long. It stays on this Mac and holds only a step and two times.
