@@ -49,7 +49,7 @@ public protocol PortalDriver {
 }
 
 public enum Drivers {
-    public static let all: [any PortalDriver.Type] = [RuijieCloud.self, AwingExtreme.self, MikroTikHotspot.self]
+    public static let all: [any PortalDriver.Type] = [RuijieCloud.self, AwingExtreme.self, MikroTikHotspot.self, UniFiGuestPortal.self]
 
     public static func recognize(_ probe: [Hop]) -> (driver: any PortalDriver.Type, entry: URL)? {
         for driver in all {

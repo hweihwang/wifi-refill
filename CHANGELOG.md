@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.0
+
+- UniFi guest portals that need no password or voucher: Wi-Fi Refill presses Connect for you, after asking once per network. Checked against UniFi Network Application 10.0.162 in a container.
+
 ## 1.8.0
 
 - When the Wi-Fi's internet is gone, the menu lists your iPhones nearby with their battery: Use the Hotspot on … turns its Personal Hotspot on over Bluetooth and joins it in a few seconds, and Back to Wi-Fi leaves it. Switch to Your iPhone When Wi-Fi Breaks does it by itself after 20 seconds of broken Wi-Fi, never for a login page or a VPN.

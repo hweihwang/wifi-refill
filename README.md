@@ -63,7 +63,7 @@ hide it.
 
 ## Which login pages work
 
-Wi-Fi Refill knows three kinds of login page, and learns any other page that only needs button presses.
+Wi-Fi Refill knows four kinds of login page, and learns any other page that only needs button presses.
 
 - **Ruijie Cloud** pages with a **One-click Login** button. You will recognise them by the address
   `portal-…ruijienetworks.com` in your browser and the button at the bottom of the page. Tested on a live cafe network
@@ -76,6 +76,9 @@ Wi-Fi Refill knows three kinds of login page, and learns any other page that onl
   address such as `10.5.50.1/login`. Wi-Fi Refill opens the trial link for you. Pages that only take a user name and
   password are for teaching. Checked against MikroTik's RouterOS 7.25.1 in a virtual machine, not yet on a cafe's
   network.
+- **UniFi** guest portals that need no password or voucher, with or without terms to accept. The address has
+  `/guest/s/` in it, often on port 8880. Checked against Ubiquiti's UniFi Network Application 10.0.162 in a container,
+  not yet on a cafe's network.
 
 ### Teach it any other page
 
@@ -109,7 +112,7 @@ Download [Wi-Fi-Refill.dmg](https://github.com/hweihwang/wifi-refill/releases/la
 it and drag Wi-Fi Refill to Applications. It is signed and notarized by Apple. It needs macOS 14 Sonoma or later and
 runs on Apple silicon and Intel Macs.
 
-<img src="docs/welcome.png" width="460" align="right" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, knows Ruijie Cloud, Awing and MikroTik login pages, and can be taught any other page that only needs button presses.">
+<img src="docs/welcome.png" width="460" align="right" alt="Wi-Fi Refill's welcome window: it is in your menu bar, logs you back in when cafe Wi-Fi logs you out, asks once per network, knows Ruijie Cloud, Awing, MikroTik and UniFi login pages, and can be taught any other page that only needs button presses.">
 
 Look for the cup in your menu bar. The first time a supported login page appears, Wi-Fi Refill asks whether it may log
 in on that network, and macOS asks whether it may reach devices on your local network. Allow both: the last step of
@@ -192,7 +195,7 @@ swift run refill-doctor    # looks at every step to the internet on this network
 ## License
 
 MIT, see [LICENSE](LICENSE). Wi-Fi Refill uses [Sparkle](https://sparkle-project.org) for updates, also under the MIT
-license. It is not affiliated with Ruijie Networks, Awing, Extreme Networks, MikroTik or Highlands Coffee.
+license. It is not affiliated with Ruijie Networks, Awing, Extreme Networks, MikroTik, Ubiquiti or Highlands Coffee.
 
 Made by [Hoang](https://hweihwang.com/). Found a bug? [Open an issue](https://github.com/hweihwang/wifi-refill/issues).
 Security problems go to [SECURITY.md](SECURITY.md).

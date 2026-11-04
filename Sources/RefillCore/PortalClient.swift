@@ -108,11 +108,11 @@ public final class PortalClient: Sendable {
     }
 
     /// The body of a successful response; other statuses throw. A POST goes out empty, from the page at `referer`, as
-    /// a page's script sends it.
-    public func fetch(_ url: URL, method: String = "GET", referer: URL? = nil) async throws -> Data {
+    /// a page's script sends it. `local` marks a device on the Wi-Fi, as for the router.
+    public func fetch(_ url: URL, method: String = "GET", referer: URL? = nil, local: Bool = false) async throws -> Data {
         var request = Self.request(url, method: method, body: method == "POST" ? Data() : nil)
         request.setValue(referer?.absoluteString, forHTTPHeaderField: "Referer")
-        let (data, response) = try await send(request)
+        let (data, response) = try await send(request, local: local)
         guard (200..<300).contains(response.statusCode) else { throw URLError(.badServerResponse) }
         return data
     }
