@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- When the internet stops, on any network, the menu says which step broke: the Wi-Fi, the router, a login page, the network's name server, the router's internet, or your VPN. Wi-Fi Refill looks at all of them at once, over the Wi-Fi itself, and says Offline when what it sees doesn't settle it.
+- A VPN that stops getting through while the Wi-Fi works now shows in the menu too.
+- The cup's steam shows your Wi-Fi: one to three waves for the signal, rising faster while the network is busy, a drip while Wi-Fi Refill logs you back in, and an exclamation mark when something is broken. It reads your Mac's own Wi-Fi and sends nothing, stands still with Reduce Motion, and Animate the Cup in the menu turns it off.
+
 ## 1.1.1
 
 - A login page's web view now refuses the camera and microphone and doesn't offer them to the page. In 1.1.0 the refusal was not wired up; macOS still refused, since Wi-Fi Refill has no camera or microphone permission.
