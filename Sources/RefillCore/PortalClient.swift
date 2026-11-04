@@ -60,8 +60,8 @@ public final class PortalClient: Sendable {
     }
 
     /// Asks for Apple's check page. Login pages answer it with a redirect or a page of their own.
-    public func probe() async -> ProbeResult {
-        guard let hop = try? await get(Self.probeURL).first else { return .offline }
+    public func probe(_ url: URL = probeURL) async -> ProbeResult {
+        guard let hop = try? await get(url).first else { return .offline }
         if hop.status == 200, hop.body.contains("<TITLE>Success</TITLE>") { return .online }
         return .portal([hop])
     }

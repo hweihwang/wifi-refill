@@ -1,4 +1,5 @@
 import AppKit
+import Companion
 import RefillCore
 import ServiceManagement
 import Sparkle
@@ -12,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let watcher = Watcher()
     private let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     private var welcome: WelcomeWindow?
+    private lazy var cup = CupController(watcher: watcher, item: item)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Replacing the app drops its login item; register again unless the person turned it off or must approve it.
@@ -23,9 +25,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu()
         menu.delegate = self
         item.menu = menu
-        watcher.onChange = { [weak self] in self?.updateIcon() }
+        watcher.onChange = { [weak self] in
+            self?.updateIcon()
+            self?.cup.statusChanged()
+        }
         watcher.askPermission = { [weak self] session in self?.askToLogIn(session) ?? false }
         updateIcon()
+        cup.restoreIcon = { [weak self] in self?.updateIcon() }
+        cup.apply()
         watcher.start()
         if !UserDefaults.standard.bool(forKey: "welcomed") { showWelcome() }
     }
@@ -78,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             entry.submenu = networks
             menu.addItem(entry)
         }
+        menu.addItem(action(L("Animate the Cup"), #selector(toggleAnimation), on: cup.animated))
         menu.addItem(.separator())
         menu.addItem(action(L("Pause"), #selector(togglePause), on: watcher.paused))
         menu.addItem(action(L("Open at Login"), #selector(toggleOpenAtLogin), on: SMAppService.mainApp.status == .enabled))
@@ -92,9 +100,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private var statusText: String {
-        switch watcher.status {
+        if watcher.diagnosis?.broken == .vpn, watcher.status != .paused { return Self.problem(.vpn) }
+        return switch watcher.status {
         case .paused: L("Paused")
-        case .offline: L("Offline")
+        case .offline: watcher.diagnosis?.broken.map(Self.problem) ?? L("Offline")
         case .noLoginPage: L("No login page right now")
         case .unsupported(let reason): L(reason)
         case .asking(let network): String(format: L("Waiting for your answer about %@"), network)
@@ -111,6 +120,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    /// What is wrong, by the leg that broke.
+    private static func problem(_ leg: Leg) -> String {
+        switch leg {
+        case .wifi: L("Wi-Fi is off or too far")
+        case .router: L("The router isn't answering")
+        case .loginPage: L("A login page is in the way")
+        case .dns: L("The network can't look up names")
+        case .internet: L("The router's internet is down")
+        case .vpn: L("Your VPN isn't getting through")
+        }
+    }
+
     private func updateIcon() {
         let symbol: String
         var active = false
@@ -119,8 +140,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .loggedIn, .loggingIn, .asking, .teaching: symbol = "cup.and.saucer.fill"; active = true
         default: symbol = "cup.and.saucer"
         }
-        item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: statusText)
-        item.button?.appearsDisabled = !active && symbol != "exclamationmark.triangle"
+        if !cup.animated {
+            item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: statusText)
+        }
+        // The animated cup shows the network itself; the still icon is dimmed where there is nothing to do.
+        item.button?.appearsDisabled = !cup.animated && !active && symbol != "exclamationmark.triangle"
         item.button?.toolTip = "Wi-Fi Refill: \(statusText)"
         item.button?.setAccessibilityLabel("Wi-Fi Refill: \(statusText)")
     }
@@ -128,6 +152,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: Actions
 
     @objc private func checkNow() { watcher.check(reason: "Check Now") }
+
+    @objc private func toggleAnimation() { cup.animated.toggle() }
 
     @objc private func teach() {
         Task {

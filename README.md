@@ -28,6 +28,18 @@ then stays quiet until your Mac joins another network.
 - **Careful.** It only presses buttons on login pages it was tested against or that you taught it, and it never
   types anything for you.
 
+## On any Wi-Fi
+
+When a check finds no internet, or the check takes more than three seconds, Wi-Fi Refill looks at every step between
+your Mac and the internet at once, over the Wi-Fi itself, and the menu says which one broke: the Wi-Fi, the router, a
+login page, the network's name server, the router's internet, or your VPN. It takes a few seconds. When what it sees
+doesn't settle it, the menu says Offline rather than guess.
+
+The steam on the cup shows your Wi-Fi: one to three waves for the signal, rising faster while the network is busy. The
+cup is filled while Wi-Fi Refill keeps you logged in at a cafe, drips while it logs you back in, and shows an
+exclamation mark when something is broken. The steam comes from your Mac's own Wi-Fi readings and sends nothing. It
+stands still with Reduce Motion, and **Animate the Cup** in the menu turns it off.
+
 ## Which login pages work
 
 Wi-Fi Refill knows two kinds of login page, and learns any other page that only needs button presses.
@@ -92,15 +104,19 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 
 | To | When | Why |
 |---|---|---|
-| `captive.apple.com` | When your Mac joins a network or wakes; on a cafe network when the session is due to end and every five minutes; on other networks every five minutes for three hours after joining | The same check macOS uses to notice a login page |
+| `captive.apple.com` | When your Mac joins a network or wakes; on a cafe network when the session is due to end and every five minutes; on other networks every five minutes for three hours after joining; once more when a check finds no internet or takes over three seconds | The same check macOS uses to notice a login page |
 | The login page's own servers | When a supported login page appears | To read the page before asking you, and to log in once you agree |
 | The cafe's router or Wi-Fi controller | After you agree, on that network | The last step of the login |
+| Your router: a ping, or the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds | To tell whether the router answers |
+| Your network's own name server: one question for `captive.apple.com` | When a check finds no internet, or takes over three seconds | To tell a broken name server from a broken line |
+| `captive.apple.com` by its address: the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds | To tell whether the router's line reaches the internet |
+| `captive.apple.com` through your VPN, never following a redirect | With each check, when a VPN carries all traffic | To tell whether the VPN is the problem |
 | Whatever a taught login page loads | When that page appears on a network you allowed, and while you teach it | Running the page so Wi-Fi Refill can press its buttons |
 | `hweihwang.com` | Once a day | To look for updates |
 | `github.com` | When an update downloads | The update itself |
 | `github.com` | Only when you choose Open GitHub in a report | The report travels in the page address; it is published only if you submit the issue |
 
-The first four go over the Wi-Fi or Ethernet itself, even when a VPN is on: while a login page holds the network, a
+The first eight rows, except the check through your VPN, go over the Wi-Fi or Ethernet itself, even when a VPN is on: while a login page holds the network, a
 VPN can't reach anything, and the login page only exists on the cafe's network. macOS checks for login pages the same
 way.
 
@@ -120,8 +136,10 @@ page doesn't say, and checks when the session is due to end, then every two seco
 countdowns included, usually under half a minute. If the router ends a session early, the next check comes
 within five minutes, or sooner if macOS notices the change.
 
-**What does the cup in the menu bar mean?** Filled: you are on a cafe network and logged in. Outline: nothing to do on
-this network. A warning sign: the last login failed, and the menu says why.
+**What does the cup in the menu bar mean?** Steam: your Wi-Fi signal, one to three waves, faster while the network is
+busy. Filled: you are on a cafe network and logged in. A drip: Wi-Fi Refill is logging you back in. An exclamation mark
+instead of steam: something is broken, and the menu says what. With **Animate the Cup** off, the cup stands still: filled
+when you are logged in at a cafe, an outline when there is nothing to do, and a warning sign when the last login failed.
 
 **Can I turn it off for one network?** Yes. Open **Networks** in the menu and turn off **Log In Automatically**, or
 choose **Pause** to stop everywhere.
@@ -133,6 +151,7 @@ You need Xcode 16 or later.
 ```sh
 swift test                 # the login flow is replayed from a recording of a real network
 scripts/install-dev.sh     # builds, signs and opens ~/Applications/Wi-Fi Refill.app
+swift run refill-doctor    # looks at every step to the internet on this network and names the broken one
 ```
 
 [CONTRIBUTING.md](CONTRIBUTING.md) explains how to add support for another login page.

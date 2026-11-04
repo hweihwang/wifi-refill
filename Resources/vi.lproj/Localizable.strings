@@ -96,3 +96,13 @@
 "Share This Login Page…" = "Chia sẻ trang đăng nhập này…";
 "Share this login page" = "Chia sẻ trang đăng nhập này";
 "This is everything the report contains: how the page is built and the buttons Wi-Fi Refill learned to press here, with unfamiliar names and anything that looks like an address or an identifier replaced. Nothing you typed is in it. Edit anything you'd rather not share. Open GitHub sends this text to GitHub in the page address, and it is only published if you submit the issue there." = "Đây là toàn bộ nội dung báo cáo: cách trang được dựng và những nút Wi-Fi Refill đã học cách bấm ở đây; các tên lạ và mọi thứ trông như địa chỉ hay mã định danh đã được thay bằng dấu *. Không có gì bạn đã gõ. Bạn có thể sửa bất cứ phần nào không muốn chia sẻ. Khi bấm Mở GitHub, nội dung này được gửi tới GitHub qua địa chỉ trang, và chỉ được công khai nếu bạn bấm gửi issue ở đó.";
+
+
+/* Animated cup and what broke */
+"Animate the Cup" = "Cho cốc chuyển động";
+"Wi-Fi is off or too far" = "Wi-Fi đang tắt hoặc ở quá xa";
+"The router isn't answering" = "Router không phản hồi";
+"A login page is in the way" = "Có trang đăng nhập chặn đường";
+"The network can't look up names" = "Mạng không tra được tên miền";
+"The router's internet is down" = "Đường internet của router đang mất";
+"Your VPN isn't getting through" = "VPN của bạn không đi qua được";

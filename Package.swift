@@ -15,9 +15,24 @@ let package = Package(
         ),
         .executableTarget(
             name: "WiFiRefill",
-            dependencies: ["RefillCore", .product(name: "Sparkle", package: "Sparkle")],
+            dependencies: ["RefillCore", "Companion", .product(name: "Sparkle", package: "Sparkle")],
             swiftSettings: [.enableUpcomingFeature("BareSlashRegexLiterals")],
             linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
+        ),
+        .target(
+            name: "Companion",
+            dependencies: ["RefillCore"],
+            swiftSettings: [.enableUpcomingFeature("BareSlashRegexLiterals")]
+        ),
+        .executableTarget(
+            name: "refill-doctor",
+            dependencies: ["RefillCore"],
+            swiftSettings: [.enableUpcomingFeature("BareSlashRegexLiterals")]
+        ),
+        .testTarget(
+            name: "CompanionTests",
+            dependencies: ["Companion"],
+            swiftSettings: [.enableUpcomingFeature("BareSlashRegexLiterals")]
         ),
         .testTarget(
             name: "RefillCoreTests",

@@ -35,18 +35,28 @@ final class DirectTransport: Transport, @unchecked Sendable {
         if let cookie = HTTPCookie.requestHeaderFields(with: cookies.cookies(for: url) ?? [])["Cookie"] {
             message.setValue(cookie, forHTTPHeaderField: "Cookie")
         }
-        let framing = try await exchange(Self.message(for: message, url: url), on: connection, network: network, waits: local, deadline: local ? Self.localDeadline : Self.deadline)
+        let remote = Remote()
+        let framing = try await exchange(Self.message(for: message, url: url), on: connection, network: network, waits: local, deadline: local ? Self.localDeadline : Self.deadline, remote: remote)
         guard case .complete(let status, let headers, let body) = framing,
               let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers)
         else { throw URLError(.badServerResponse) }
+        // The address that served Apple's check page, for telling a broken name server from a broken line later.
+        if host == Checkup.checkHost, status == 200, let address = remote.address, String(decoding: body.prefix(Self.bodyLimit), as: UTF8.self).contains("<TITLE>Success</TITLE>") {
+            Checkup.served(by: address)
+        }
         if let setCookie = headers["set-cookie"] {
             cookies.setCookies(HTTPCookie.cookies(withResponseHeaderFields: ["Set-Cookie": setCookie], for: url), for: url, mainDocumentURL: nil)
         }
         return (Data(body.prefix(Self.bodyLimit)), response)
     }
 
+    /// The IPv4 address a connection reached, noted once it opens.
+    private final class Remote: @unchecked Sendable {
+        var address: String?
+    }
+
     /// Sends `message` and reads until the response is whole, the server closes, or the body passes the limit.
-    private func exchange(_ message: Data, on connection: NWConnection, network: LocalNetwork, waits: Bool, deadline: TimeInterval) async throws -> Framing {
+    private func exchange(_ message: Data, on connection: NWConnection, network: LocalNetwork, waits: Bool, deadline: TimeInterval, remote: Remote) async throws -> Framing {
         /// Touched on `queue` only.
         final class State: @unchecked Sendable {
             var continuation: CheckedContinuation<Framing, Error>?
@@ -94,6 +104,9 @@ final class DirectTransport: Transport, @unchecked Sendable {
                             // A connection can wait a long while, for Local Network access for one; the Mac may be
                             // on another network by the time it opens.
                             guard Gateway.current() == network else { return state.finish(.failure(URLError(.networkConnectionLost))) }
+                            if case .hostPort(.ipv4(let address), _) = connection.currentPath?.remoteEndpoint {
+                                remote.address = address.rawValue.map(String.init).joined(separator: ".")
+                            }
                             connection.send(content: message, completion: .contentProcessed { error in
                                 if let error { state.finish(.failure(URLError(.networkConnectionLost, userInfo: [NSUnderlyingErrorKey: error]))) } else { receive() }
                             })

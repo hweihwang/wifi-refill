@@ -85,6 +85,15 @@ final class Watcher {
     /// connection ends.
     private var allowedHere: (network: LocalNetwork, name: String)?
     private var sessionEnd: Date?
+    /// Which leg broke, from the last check that found the Mac offline.
+    private(set) var diagnosis: Diagnosis?
+    private var diagnosing: Task<Void, Never>?
+    private var vpnCheck: Task<Void, Never>?
+    /// When the last check began, and when Wi-Fi Refill last began looking at the legs.
+    private var lastChecked = Date.distantPast
+    private var diagnosisBegan = Date.distantPast
+    /// While a check waits for Apple's check page.
+    private var probing = false
     /// The login whose length is being learned: when it happened, and the last check that found it still open.
     private var learning: (profile: String, network: LocalNetwork, loggedIn: Date, lastOnline: Date)?
     /// When the Mac joined the current network.
@@ -172,6 +181,13 @@ final class Watcher {
         generation += 1
         task?.cancel()
         lesson?.cancel()
+        diagnosing?.cancel()
+        vpnCheck?.cancel()
+        // What was found belongs to the network and the checking that just ended.
+        if diagnosis != nil {
+            diagnosis = nil
+            onChange?()
+        }
         check(reason: reason)
     }
 
@@ -202,13 +218,31 @@ final class Watcher {
             ?? allowedHere.flatMap { $0.network == current ? Profile(id: "page:this-connection", network: $0.name, router: $0.network.router, allowed: true) : nil }
         // Every request of this check goes out on the network it started on, or not at all.
         let client = portal.on(current)
-        let result = await client.probe()
+        lastChecked = Date()
+        // What an earlier check began to look at no longer describes this one.
+        vpnCheck?.cancel()
+        // A check page that takes a while is already news: start looking at every leg after three seconds rather than
+        // wait out its deadline.
+        let early = Task {
+            try? await Task.sleep(for: .seconds(3))
+            if !Task.isCancelled, stillApplies(started) { diagnose(on: current, started: started) }
+        }
+        probing = true
+        let result = await withTaskCancellationHandler { await client.probe() } onCancel: { early.cancel() }
+        probing = false
+        early.cancel()
         guard stillApplies(started) else { return }
         logger.notice("check (\(reason, privacy: .public)): \(Self.describe(result), privacy: .public)")
 
         let now = Date()
         switch result {
         case .online:
+            diagnosing?.cancel()
+            vpnCheck?.cancel()
+            // A VPN found broken stays so until the VPN check below says otherwise, rather than flicker.
+            if diagnosis?.broken != .vpn { diagnosis = nil }
+            // The Wi-Fi reaches the internet; a VPN that carries all traffic may still not.
+            if let current { checkVPN(under: current, started: started) }
             joinAttempt = 0
             if learning?.network == current { learning?.lastOnline = now }
             if let end = sessionEnd, now >= end.addingTimeInterval(Schedule.endingWindow) { sessionEnd = nil }
@@ -218,10 +252,49 @@ final class Watcher {
             status = .offline
             schedule(Schedule.next(after: .offline, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil, joinAttempt: joinAttempt))
             joinAttempt += 1
+            // Unless the check page took long enough that the legs are already being looked at.
+            if diagnosisBegan < lastChecked { diagnose(on: current, started: started) }
         case .portal(let hops):
+            diagnosing?.cancel()
+            vpnCheck?.cancel()
+            diagnosis = nil
             lastProbe = hops
             learnSessionLength(loggedOut: now)
             await logIn(hops, client: client, started: started)
+        }
+    }
+
+    /// Finds which leg broke, beside the checks rather than in their way: right after joining, the next check may be
+    /// due before the legs have all answered.
+    private func diagnose(on network: LocalNetwork?, started: Int) {
+        diagnosing?.cancel()
+        diagnosisBegan = Date()
+        diagnosing = Task {
+            let found = await Checkup.run(on: network)
+            guard !Task.isCancelled, stillApplies(started) else { return }
+            if found.broken != diagnosis?.broken { Log.write("Offline: \(found.broken?.rawValue ?? "no broken leg found") (\(found.milliseconds) ms).") }
+            diagnosis = found
+            // Found while the check page still hasn't answered: the network is down or held by a login page now,
+            // whatever the last check said. Once the check page answers, its own result stands.
+            if probing, let leg = found.broken, leg != .vpn {
+                switch status {
+                case .loggingIn, .teaching, .asking, .paused: break
+                default: status = .offline
+                }
+            }
+            onChange?()
+        }
+    }
+
+    private func checkVPN(under network: LocalNetwork, started: Int) {
+        vpnCheck = Task {
+            let reading = await Checkup.throughVPN(under: network)
+            guard !Task.isCancelled, stillApplies(started) else { return }
+            let found = reading == .broken ? Diagnosis(observations: Observations(probe: .online, vpn: .broken), milliseconds: 0) : nil
+            guard found?.broken != diagnosis?.broken else { return }
+            if found != nil { Log.write("The VPN does not reach the internet; the Wi-Fi does.") }
+            diagnosis = found
+            onChange?()
         }
     }
 
