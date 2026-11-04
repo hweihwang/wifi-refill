@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         watcher.askPermission = { [weak self] session in self?.askToLogIn(session) ?? false }
         updateIcon()
         cup.restoreIcon = { [weak self] in self?.updateIcon() }
+        cup.describe = { [weak self] in self?.statusText ?? "" }
         cup.apply()
         watcher.start()
         if !UserDefaults.standard.bool(forKey: "welcomed") { showWelcome() }
@@ -89,6 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(entry)
         }
         menu.addItem(action(L("Animate the Cup"), #selector(toggleAnimation), on: cup.animated))
+        menu.addItem(action(L("Cup on the Desktop"), #selector(toggleDesktopCup), on: cup.onDesktop))
         menu.addItem(.separator())
         menu.addItem(action(L("Pause"), #selector(togglePause), on: watcher.paused))
         menu.addItem(action(L("Open at Login"), #selector(toggleOpenAtLogin), on: SMAppService.mainApp.status == .enabled))
@@ -158,6 +160,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func checkNow() { watcher.check(reason: "Check Now") }
 
     @objc private func toggleAnimation() { cup.animated.toggle() }
+
+    @objc private func toggleDesktopCup() { cup.onDesktop.toggle() }
 
     @objc private func openWiFiSettings() {
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.wifi-settings-extension")!)

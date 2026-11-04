@@ -86,7 +86,11 @@ final class Watcher {
     /// A network macOS has no name for, where the person allowed a taught page, and what the menu calls it: until the
     /// connection ends.
     private var allowedHere: (network: LocalNetwork, name: String)?
-    private var sessionEnd: Date?
+    private(set) var sessionEnd: Date?
+    /// When the current cafe session began, for how much of it is left.
+    private(set) var sessionStart: Date?
+    /// When Wi-Fi Refill last logged the Mac back in.
+    private(set) var refilled: Date?
     /// Which leg broke, from the last check that found the Mac offline.
     private(set) var diagnosis: Diagnosis?
     private var diagnosing: Task<Void, Never>?
@@ -232,7 +236,7 @@ final class Watcher {
         if let current, current.router != lastRouter {
             lastRouter = current.router
             joined = Date()
-            sessionEnd = savedSessionEnd(on: current)
+            (sessionStart, sessionEnd) = savedSession(on: current)
             learning = nil
             waitingSince = nil
             loginFailures = 0
@@ -300,8 +304,9 @@ final class Watcher {
             status = .offline
             schedule(Schedule.next(after: .offline, now: now, sessionEnd: sessionEnd, onCafe: cafe != nil, joinAttempt: joinAttempt))
             joinAttempt += 1
-            // Unless the check page took long enough that the legs are already being looked at.
-            if diagnosisBegan < lastChecked { diagnose(on: current, started: started) }
+            // Unless the check page took long enough that the legs are already being looked at. Right after joining,
+            // the router may not have handed out an address yet: that is no broken router until the join retries pass.
+            if diagnosisBegan < lastChecked, current != nil || joinAttempt > Schedule.joinRetries.count { diagnose(on: current, started: started) }
         case .portal(let hops):
             waitingSince = nil
             diagnosing?.cancel()
@@ -552,9 +557,11 @@ final class Watcher {
         let learned = profiles.first { $0.id == session.profile }?.session
         sessionEnd = session.minutes.map { now.addingTimeInterval(TimeInterval($0 * 60)) } ?? learned.map { now.addingTimeInterval($0.expected) }
         loginFailures = 0
+        sessionStart = now
         // Kept across launches, so an update or a restart still checks right when the session ends.
         if let network, let sessionEnd {
-            defaults.set(["router": network.router, "signature": network.signature ?? "", "end": sessionEnd.timeIntervalSince1970], forKey: "session")
+            defaults.set(["router": network.router, "signature": network.signature ?? "", "start": now.timeIntervalSince1970,
+                          "end": sessionEnd.timeIntervalSince1970], forKey: "session")
         } else {
             defaults.removeObject(forKey: "session")
         }
@@ -562,13 +569,13 @@ final class Watcher {
         learning = session.minutes == nil && stored ? network.map { (session.profile, $0, now, now) } : nil
     }
 
-    /// The end of the last session logged in to on `network`, unless it is long over.
-    private func savedSessionEnd(on network: LocalNetwork) -> Date? {
+    /// The start and end of the last session logged in to on `network`, unless it is long over.
+    private func savedSession(on network: LocalNetwork) -> (Date?, Date?) {
         guard let saved = defaults.dictionary(forKey: "session"), saved["router"] as? String == network.router,
               saved["signature"] as? String == network.signature ?? "", let end = (saved["end"] as? Double).map(Date.init(timeIntervalSince1970:)),
               Date() < end.addingTimeInterval(Schedule.endingWindow)
-        else { return nil }
-        return end
+        else { return (nil, nil) }
+        return ((saved["start"] as? Double).map(Date.init(timeIntervalSince1970:)), end)
     }
 
     /// The network logged the Mac out: the session ended after the last check that was online, and before now.
@@ -615,6 +622,7 @@ final class Watcher {
     }
 
     private func countReconnect() {
+        refilled = Date()
         defaults.set(reconnectsToday + 1, forKey: "reconnectCount")
         defaults.set(Self.today, forKey: "reconnectDay")
     }

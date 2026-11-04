@@ -9,6 +9,8 @@ func quietly(_ change: () -> Void) {
 }
 
 extension CALayer {
+    var sublayersDeep: [CALayer] { (sublayers ?? []).flatMap { [$0] + $0.sublayersDeep } }
+
     /// Starts `animation` now, repeating forever, `offset` seconds into its cycle.
     func loop(_ animation: CAAnimation, key: String, offset: Double = 0) {
         animation.repeatCount = .infinity

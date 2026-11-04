@@ -41,6 +41,11 @@ cup is filled while Wi-Fi Refill keeps you logged in at a cafe, drips while it l
 exclamation mark when something is broken. The steam comes from your Mac's own Wi-Fi readings and sends nothing. It
 stands still with Reduce Motion, and **Animate the Cup** in the menu turns it off.
 
+**Cup on the Desktop** puts a bigger cup on your desktop, above your windows. Its steam is your Wi-Fi, its coffee is
+what's left of the cafe session, and a little kettle refills it when Wi-Fi Refill logs you back in. When something
+breaks it turns cold and says what. Drag it anywhere, point at it to see the menu's status line, and right-click to
+hide it.
+
 ## Which login pages work
 
 Wi-Fi Refill knows two kinds of login page, and learns any other page that only needs button presses.
