@@ -119,3 +119,25 @@
 "Use Your iPhone's Hotspot…" = "Dùng hotspot của iPhone…";
 "Cup on the Desktop" = "Cốc trên màn hình";
 "Hide the Cup" = "Ẩn cốc";
+
+/* Seat finder and speed test */
+"Find a Better Seat" = "Tìm chỗ sóng mạnh hơn";
+"Find a Better Seat…" = "Tìm chỗ sóng mạnh hơn…";
+"Strong signal" = "Sóng mạnh";
+"Good signal" = "Sóng tốt";
+"Weak signal" = "Sóng yếu";
+"%d dBm, %d dB above the noise" = "%d dBm, cao hơn nhiễu %d dB";
+"Best so far: %d dBm" = "Tốt nhất tới giờ: %d dBm";
+"Wi-Fi is off or not joined to a network" = "Wi-Fi đang tắt hoặc chưa vào mạng nào";
+"Carry your Mac around. The ticks come faster where the signal is stronger." = "Cầm Mac đi quanh. Chỗ nào sóng mạnh hơn, tiếng tick sẽ nhanh hơn.";
+"Ticks" = "Tiếng tick";
+"Test Speed" = "Đo tốc độ";
+"Testing speed…" = "Đang đo tốc độ…";
+"Speed at %@: %d Mbit/s down, %d up, %d ms when busy" = "Tốc độ lúc %@: tải xuống %d Mbit/s, tải lên %d, %d ms khi bận";
+"Test speed on a metered connection?" = "Đo tốc độ trên kết nối tính dung lượng?";
+"A speed test moves a few hundred megabytes on a fast line, which this connection may count against a data plan." = "Một lần đo tốc độ dùng vài trăm megabyte trên đường truyền nhanh, và kết nối này có thể trừ vào gói dữ liệu của bạn.";
+"%d Mbit/s down, %d up" = "Tải xuống %d Mbit/s, tải lên %d";
+"A round trip takes %d ms while the line is busy: good for video calls." = "Mỗi lượt đi về mất %d ms khi đường truyền bận: đủ tốt cho gọi video.";
+"A round trip takes %d ms while the line is busy: video calls may stutter." = "Mỗi lượt đi về mất %d ms khi đường truyền bận: gọi video có thể bị giật.";
+"Couldn't test the speed" = "Không đo được tốc độ";
+"The test didn't finish. Try again once the internet works." = "Lần đo không hoàn tất. Hãy thử lại khi có internet.";

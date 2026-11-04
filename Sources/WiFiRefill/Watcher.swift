@@ -87,6 +87,8 @@ final class Watcher {
     /// connection ends.
     private var allowedHere: (network: LocalNetwork, name: String)?
     private(set) var sessionEnd: Date?
+    /// macOS counts the connection against a data plan, as on an iPhone's hotspot.
+    private(set) var expensive = false
     /// When the current cafe session began, for how much of it is left.
     private(set) var sessionStart: Date?
     /// When Wi-Fi Refill last logged the Mac back in.
@@ -126,8 +128,12 @@ final class Watcher {
     private var timer: Timer?
 
     func start() {
-        monitor.pathUpdateHandler = { [weak self] _ in
-            Task { @MainActor in self?.networkChanged() }
+        monitor.pathUpdateHandler = { [weak self] path in
+            let expensive = path.isExpensive
+            Task { @MainActor in
+                self?.expensive = expensive
+                self?.networkChanged()
+            }
         }
         monitor.start(queue: .main)
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in

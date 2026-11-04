@@ -41,6 +41,11 @@ cup is filled while Wi-Fi Refill keeps you logged in at a cafe, drips while it l
 exclamation mark when something is broken. The steam comes from your Mac's own Wi-Fi readings and sends nothing. It
 stands still with Reduce Motion, and **Animate the Cup** in the menu turns it off.
 
+**Find a Better Seat…** shows your Wi-Fi's signal live while you carry your Mac around, with the best spot so far,
+and ticks that come faster where the signal is stronger. **Test Speed** runs macOS's own speed test over the Wi-Fi itself,
+past any VPN, and says whether the line is good for video calls; it asks first on a connection that counts against a
+data plan.
+
 **Cup on the Desktop** puts a bigger cup on your desktop, above your windows. Its steam is your Wi-Fi, its coffee is
 what's left of the cafe session, and a little kettle refills it when Wi-Fi Refill logs you back in. When something
 breaks it turns cold and says what. Drag it anywhere, point at it to see the menu's status line, and right-click to
@@ -121,12 +126,13 @@ Wi-Fi Refill has no analytics and no account. It makes these requests and no oth
 | Your network's own name server: one question for `captive.apple.com` | When a check finds no internet, or takes over three seconds | To tell a broken name server from a broken line |
 | `captive.apple.com` by its address: the start of a connection that sends nothing | When a check finds no internet, or takes over three seconds | To tell whether the router's line reaches the internet |
 | `captive.apple.com` through your VPN, never following a redirect | With each check, when a VPN carries all traffic | To tell whether the VPN is the problem |
+| Apple's speed test servers, through macOS's own `networkQuality` | Only when you choose Test Speed | To measure the line's speed; on a fast line it moves a few hundred megabytes |
 | Whatever a taught login page loads | When that page appears on a network you allowed, and while you teach it | Running the page so Wi-Fi Refill can press its buttons |
 | `hweihwang.com` | Once a day | To look for updates |
 | `github.com` | When an update downloads | The update itself |
 | `github.com` | Only when you choose Open GitHub in a report | The report travels in the page address; it is published only if you submit the issue |
 
-The first eight rows, except the check through your VPN, go over the Wi-Fi or Ethernet itself, even when a VPN is on: while a login page holds the network, a
+The first nine rows, except the check through your VPN, go over the Wi-Fi or Ethernet itself, even when a VPN is on: while a login page holds the network, a
 VPN can't reach anything, and the login page only exists on the cafe's network. macOS checks for login pages the same
 way.
 

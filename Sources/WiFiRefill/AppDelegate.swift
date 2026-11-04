@@ -13,6 +13,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let watcher = Watcher()
     private let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     private var welcome: WelcomeWindow?
+    private let seatFinder = SeatFinder()
+    private var speedTest: Process?
+    private var lastSpeed: (speed: Speed, at: Date)?
     private lazy var cup = CupController(watcher: watcher, item: item)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -53,8 +56,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case 1: menu.addItem(info(L("Logged you back in once today")))
         case let count: menu.addItem(info(String(format: L("Logged you back in %d times today"), count)))
         }
+        if let lastSpeed {
+            menu.addItem(info(String(format: L("Speed at %@: %d Mbit/s down, %d up, %d ms when busy"), Log.time(lastSpeed.at),
+                                     Int(lastSpeed.speed.down.rounded()), Int(lastSpeed.speed.up.rounded()), Int(lastSpeed.speed.loadedRoundTrip.rounded()))))
+        }
         menu.addItem(.separator())
         menu.addItem(action(L("Check Now"), #selector(checkNow)))
+        menu.addItem(action(L("Find a Better Seat…"), #selector(findSeat)))
+        if speedTest == nil {
+            menu.addItem(action(L("Test Speed"), #selector(testSpeed)))
+        } else {
+            menu.addItem(info(L("Testing speed…")))
+        }
         switch watcher.status {
         case .unsupported, .failed:
             menu.addItem(action(L("Teach Wi-Fi Refill This Login Page…"), #selector(teach)))
@@ -160,6 +173,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func checkNow() { watcher.check(reason: "Check Now") }
 
     @objc private func toggleAnimation() { cup.animated.toggle() }
+
+    @objc private func findSeat() { seatFinder.show() }
+
+    /// Runs macOS's own speed test over the Wi-Fi or Ethernet itself, past any VPN, for at most twelve seconds.
+    @objc private func testSpeed() {
+        guard speedTest == nil, let network = Gateway.current() else { return }
+        if watcher.expensive {
+            NSApp.activate()
+            let alert = NSAlert()
+            alert.messageText = L("Test speed on a metered connection?")
+            alert.informativeText = L("A speed test moves a few hundred megabytes on a fast line, which this connection may count against a data plan.")
+            alert.addButton(withTitle: L("Test Speed"))
+            alert.addButton(withTitle: L("Cancel"))
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
+        }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/networkQuality")
+        process.arguments = ["-c", "-M", "12", "-I", network.interface]
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        process.terminationHandler = { [weak self] _ in
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            Task { @MainActor in self?.finishSpeedTest(Speed(json: data)) }
+        }
+        do {
+            try process.run()
+            speedTest = process
+        } catch {
+            finishSpeedTest(nil)
+        }
+    }
+
+    private func finishSpeedTest(_ speed: Speed?) {
+        speedTest = nil
+        NSApp.activate()
+        let alert = NSAlert()
+        if let speed {
+            lastSpeed = (speed, Date())
+            alert.messageText = String(format: L("%d Mbit/s down, %d up"), Int(speed.down.rounded()), Int(speed.up.rounded()))
+            alert.informativeText = String(format: speed.goodForCalls
+                ? L("A round trip takes %d ms while the line is busy: good for video calls.")
+                : L("A round trip takes %d ms while the line is busy: video calls may stutter."), Int(speed.loadedRoundTrip.rounded()))
+        } else {
+            alert.messageText = L("Couldn't test the speed")
+            alert.informativeText = L("The test didn't finish. Try again once the internet works.")
+        }
+        alert.runModal()
+    }
 
     @objc private func toggleDesktopCup() { cup.onDesktop.toggle() }
 
