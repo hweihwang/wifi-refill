@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0
+
+- Teach pages that ask you to type, such as a phone number, a room number or a voucher: tick Remember what I type on this page while you teach it, and Wi-Fi Refill types it again for you, with the buttons, each time the network logs you out. What you typed stays in your Keychain on this Mac, never in a shared page, a report or the log. Pressing Return in a field counts as pressing the form's button.
+- When the internet is gone, the menu offers Use Your iPhone's Hotspot…, which opens Wi-Fi settings where macOS lists your iPhone. macOS joins it by itself only when no Wi-Fi is around at all.
+
 ## 1.2.1
 
 - When a cafe session ends, the menu says Wi-Fi Refill is waiting for the login page, instead of blaming the router's internet for the few seconds before the page appears.
