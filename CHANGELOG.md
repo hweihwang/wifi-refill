@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.0
+
+- Recent Problems in the menu lists the last ten times the internet stopped, which step broke and for how long. It stays on this Mac and holds only a step and two times.
+- On a connection that counts against a data plan, such as an iPhone's hotspot, the menu shows how much this Mac has used since joining, from its own counters.
+
 ## 1.5.0
 
 - Find a Better Seat… shows your Wi-Fi's signal live while you carry your Mac around, with the best spot so far, and ticks that come faster where the signal is stronger. It reads your Mac's own Wi-Fi and sends nothing.
