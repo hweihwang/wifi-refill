@@ -35,6 +35,9 @@ your Mac and the internet at once, over the Wi-Fi itself, and the menu says whic
 login page, the network's name server, the router's internet, or your VPN. It takes a few seconds. When what it sees
 doesn't settle it, the menu says Offline rather than guess. When the internet is gone, **Use Your iPhone's Hotspot…**
 opens Wi-Fi settings, where macOS lists your iPhone; macOS joins it by itself only when no Wi-Fi is around at all.
+**Recent Problems** in the menu lists the last ten times the internet stopped, which step broke and for how long. On a
+connection that counts against a data plan, such as an iPhone's hotspot, the menu shows how much this Mac has used
+since joining.
 
 The steam on the cup shows your Wi-Fi: one to three waves for the signal, rising faster while the network is busy. The
 cup is filled while Wi-Fi Refill keeps you logged in at a cafe, drips while it logs you back in, and shows an
@@ -141,7 +144,7 @@ taught page runs in a private web view, as in a browser: its scripts and adverts
 advertisers. The web view keeps no cookies or history once it closes, can reach only the internet and the cafe's own
 network, has WebRTC turned off, and closes as soon as the network opens. What you taught (which buttons and fields, on which page) stays on your Mac with the settings
 and a short log at `~/Library/Logs/WiFiRefill.log`; what you typed, if you ticked Remember what I type, stays in your
-Keychain and goes only into the page you typed it into.
+Keychain and goes only into the page you typed it into. The list of recent problems holds only a step and two times.
 
 ## Questions
 

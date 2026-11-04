@@ -56,6 +56,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case 1: menu.addItem(info(L("Logged you back in once today")))
         case let count: menu.addItem(info(String(format: L("Logged you back in %d times today"), count)))
         }
+        if watcher.expensive {
+            menu.addItem(info(String(format: L("Metered connection: %@ used since joining"),
+                                     ByteCountFormatter.string(fromByteCount: Int64(clamping: watcher.usedSinceJoining), countStyle: .file))))
+        }
         if let lastSpeed {
             menu.addItem(info(String(format: L("Speed at %@: %d Mbit/s down, %d up, %d ms when busy"), Log.time(lastSpeed.at),
                                      Int(lastSpeed.speed.down.rounded()), Int(lastSpeed.speed.up.rounded()), Int(lastSpeed.speed.loadedRoundTrip.rounded()))))
@@ -86,6 +90,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         if watcher.shareableRecipe != nil {
             menu.addItem(action(L("Share This Login Page…"), #selector(shareLoginPage)))
+        }
+        let problems = watcher.problems.problems
+        if !problems.isEmpty {
+            let list = NSMenu()
+            for problem in problems.reversed() {
+                guard let leg = problem.broken else { continue }
+                list.addItem(info("\(Self.when(problem.start, problem.end)) · \(Self.cause(leg))"))
+            }
+            let entry = NSMenuItem(title: L("Recent Problems"), action: nil, keyEquivalent: "")
+            entry.submenu = list
+            menu.addItem(entry)
         }
         if !watcher.profiles.isEmpty {
             let networks = NSMenu()
@@ -136,6 +151,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .failed(let reason): String(format: L("Couldn't log in: %@"), L(reason))
         case .teaching: L("Learning this login page…")
         case .waitingForPage(let network): String(format: L("%@: waiting for the login page…"), network)
+        }
+    }
+
+    /// A problem's time: its start and end today, or its day too.
+    private static func when(_ start: Date, _ end: Date?) -> String {
+        let from = Calendar.current.isDateInToday(start) ? Log.time(start) : start.formatted(date: .abbreviated, time: .shortened)
+        guard let end else { return String(format: L("%@ until now"), from) }
+        let minutes = max(1, Int((end.timeIntervalSince(start) / 60).rounded()))
+        return String(format: L("%@, %d min"), from, minutes)
+    }
+
+    /// What broke, for a list of past problems.
+    private static func cause(_ leg: Leg) -> String {
+        switch leg {
+        case .wifi: L("Wi-Fi off or too far")
+        case .router: L("Router not answering")
+        case .loginPage: L("Login page in the way")
+        case .dns: L("Name server not answering")
+        case .internet: L("Router's internet down")
+        case .vpn: L("VPN not getting through")
         }
     }
 

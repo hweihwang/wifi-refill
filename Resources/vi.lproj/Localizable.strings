@@ -141,3 +141,15 @@
 "A round trip takes %d ms while the line is busy: video calls may stutter." = "Mỗi lượt đi về mất %d ms khi đường truyền bận: gọi video có thể bị giật.";
 "Couldn't test the speed" = "Không đo được tốc độ";
 "The test didn't finish. Try again once the internet works." = "Lần đo không hoàn tất. Hãy thử lại khi có internet.";
+
+/* Recent problems, metered connections */
+"Recent Problems" = "Sự cố gần đây";
+"%@ until now" = "%@ tới giờ";
+"%@, %d min" = "%@, %d phút";
+"Wi-Fi off or too far" = "Wi-Fi tắt hoặc ở quá xa";
+"Router not answering" = "Router không phản hồi";
+"Login page in the way" = "Trang đăng nhập chặn đường";
+"Name server not answering" = "Máy chủ tên miền không phản hồi";
+"Router's internet down" = "Router mất internet";
+"VPN not getting through" = "VPN không đi qua được";
+"Metered connection: %@ used since joining" = "Kết nối tính dung lượng: đã dùng %@ từ lúc vào mạng";

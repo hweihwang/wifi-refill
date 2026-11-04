@@ -89,6 +89,14 @@ final class Watcher {
     private(set) var sessionEnd: Date?
     /// macOS counts the connection against a data plan, as on an iPhone's hotspot.
     private(set) var expensive = false
+    /// Bytes both ways on this network since the Mac joined it, from its own counters.
+    private(set) var usedSinceJoining: UInt64 = 0
+    private var lastCount: (interface: String, traffic: Traffic)?
+    /// The last few times the internet stopped, and which step broke. Kept on this Mac only.
+    private(set) var problems: ProblemLog {
+        get { defaults.data(forKey: "problems").flatMap { try? JSONDecoder().decode(ProblemLog.self, from: $0) } ?? ProblemLog() }
+        set { defaults.set(try? JSONEncoder().encode(newValue), forKey: "problems") }
+    }
     /// When the current cafe session began, for how much of it is left.
     private(set) var sessionStart: Date?
     /// When Wi-Fi Refill last logged the Mac back in.
@@ -154,6 +162,8 @@ final class Watcher {
     /// counters show it without a request: apps keep sending and nothing comes back. Then a check finds out why.
     private func watchForStall() {
         guard let interface = network?.interface, let now = Traffic.read(interface) else { return traffic = [] }
+        if let lastCount, lastCount.interface == interface { usedSinceJoining += Traffic.bytes(from: lastCount.traffic, to: now) }
+        lastCount = (interface, now)
         traffic = Array((traffic + [now]).suffix(4))
         guard traffic.count == 4, Traffic.stalled(from: traffic[0], to: now) else { return }
         switch status {
@@ -247,6 +257,8 @@ final class Watcher {
             waitingSince = nil
             loginFailures = 0
             traffic = []
+            usedSinceJoining = 0
+            lastCount = nil
         }
         // A session belongs to its network: another network's login page says nothing about when it ended.
         if learning != nil, learning?.network != current { learning = nil }
@@ -288,7 +300,10 @@ final class Watcher {
             waitingSince = nil
             loginFailures = 0
             // A VPN found broken stays so until the VPN check below says otherwise, rather than flicker.
-            if diagnosis?.broken != .vpn { diagnosis = nil }
+            if diagnosis?.broken != .vpn {
+                diagnosis = nil
+                if problems.problems.last.map({ $0.end == nil && $0.broken != .vpn }) == true { problems.cleared(at: now) }
+            }
             // The Wi-Fi reaches the internet; a VPN that carries all traffic may still not.
             if let current { checkVPN(under: current, started: started) }
             joinAttempt = 0
@@ -334,6 +349,7 @@ final class Watcher {
             guard !Task.isCancelled, stillApplies(started) else { return }
             if found.broken != diagnosis?.broken { Log.write("Offline: \(found.broken?.rawValue ?? "no broken leg found") (\(found.milliseconds) ms).") }
             diagnosis = found
+            if let leg = found.broken { problems.found(leg, at: Date()) }
             // Found while the check page still hasn't answered: the network is down or held by a login page now,
             // whatever the last check said. Once the check page answers, its own result stands.
             if probing, !checkOnCafe, let leg = found.broken, leg != .vpn {
@@ -354,6 +370,7 @@ final class Watcher {
             guard found?.broken != diagnosis?.broken else { return }
             if found != nil { Log.write("The VPN does not reach the internet; the Wi-Fi does.") }
             diagnosis = found
+            if found != nil { problems.found(.vpn, at: Date()) } else { problems.cleared(at: Date(), only: .vpn) }
             onChange?()
         }
     }
